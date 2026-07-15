@@ -21,13 +21,15 @@ stack=stack(worker_id:worker_count:end);
 initial_retained=numel(stack);
 cert=0; disc=0; bis=0; unv=0; two=0; max_d=0;
 min_margin=inf; min_at=[]; t0=tic;
+unverified_boxes=struct('center',{},'half_widths',{},'depth',{}, ...
+    'reason',{},'gap',{},'split_dim',{});
 while ~isempty(stack)
     B=stack{end}; stack(end)=[]; max_d=max(max_d,B.depth);
     if qn_box_inside_ball(B.center,B.half_widths,C.rho_seam) || ...
             qn_box_outside_pk(B.center,B.half_widths)
         disc=disc+1; continue;
     end
-    [verdict,info,~,sdim]=qn_certify_box(B.center,B.half_widths);
+    [verdict,info,gap,sdim]=qn_certify_box(B.center,B.half_widths);
     if strcmp(verdict,'cert')
         cert=cert+1; two=two+strcmp(info.route,'2v');
         if info.margin<min_margin, min_margin=info.margin; min_at=B.center'; end
@@ -35,6 +37,14 @@ while ~isempty(stack)
         [L,R]=qn_bisect_box(B,sdim); stack{end+1,1}=L; stack{end+1,1}=R; bis=bis+1;
     else
         unv=unv+1;
+        if isfield(info,'reason'), reason=info.reason; else, reason='unknown'; end
+        unverified_boxes(end+1)=struct('center',B.center', ... %#ok<AGROW>
+            'half_widths',B.half_widths','depth',B.depth,'reason',reason, ...
+            'gap',gap,'split_dim',sdim);
+        fprintf(['UNVERIFIED depth=%d reason=%s center=[%.17g %.17g %.17g %.17g] ' ...
+            'half_widths=[%.17g %.17g %.17g %.17g]\n'],B.depth,reason, ...
+            B.center(1),B.center(2),B.center(3),B.center(4), ...
+            B.half_widths(1),B.half_widths(2),B.half_widths(3),B.half_widths(4));
     end
     if verbose && mod(cert+disc+bis,200)==0
         fprintf('global: cert=%d disc=%d bis=%d unv=%d stack=%d\n',cert,disc,bis,unv,numel(stack));
@@ -46,6 +56,7 @@ result=struct('verified',cert,'discarded',disc,'bisected',bis, ...
     'wall_seconds',toc(t0),'n_init',n_init,'initial_retained',initial_retained, ...
     'initial_retained_all',initial_retained_all,'worker_id',worker_id, ...
     'worker_count',worker_count,'rho_seam',mid(C.rho_seam),'complete',unv==0);
+result.unverified_boxes=unverified_boxes;
 fprintf(['RESULT global verified=%d discarded=%d bisected=%d unverified=%d ' ...
     'two_vector=%d max_depth=%d min_certified_margin=%.17g wall_s=%.1f\n'], ...
     cert,disc,bis,unv,two,max_d,min_margin,result.wall_seconds);

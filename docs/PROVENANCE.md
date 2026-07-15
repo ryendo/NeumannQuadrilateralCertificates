@@ -19,6 +19,23 @@ the local `quad_neumann_global` Python/Arb extract supplied with the paper on
 The reference layout was `ryendo/DirichletSimplicityClustered` at commit
 `9331995405ac7fdbcb97e2a9a3ab26c0c9f6bf2b` (2025-12-14).
 
+## Missing global run-of-record source
+
+The supplied `quad_neumann_global/README.md` attributes the paper's global
+counts to a development driver named `eigbound_shrink.py` in a parent
+`quad_neumann_release/` tree. It also refers to `GLOBAL_STEP_AUDIT.md` and a
+`python_flint_audit/` directory. None of those files is present in the supplied
+extract, elsewhere in the paper workspace, or in the accessible GitHub source.
+
+This distinction is observable in the cover itself: the supplied
+`run_cover(n_init=3)` retains 18 root boxes, whereas the paper reports 74 roots
+through `1420 + 337 - 1683 = 74`. On liulab, a faithful MATLAB/INTLAB run of the
+18-root extract reached depth 60 with `qn:Jacobian` on boxes approaching the
+degenerate boundary of `P_K`. The run was stopped and no global summary was
+accepted. `qn_run_global_cover` records the center, half-widths, depth, and
+failure reason for every such box so that a supplied run-of-record algorithm
+can be compared directly.
+
 Porting rules:
 
 - The global cover geometry, D4 representative rule, gap threshold, 1-vector

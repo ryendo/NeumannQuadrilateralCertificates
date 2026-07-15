@@ -74,6 +74,16 @@ first nonzero Neumann eigenvalue. The local and global regions overlap on
 The source Python code called the seam `RHO_SHARP`; this repository uses the
 paper-aligned names `rho_local` and `rho_seam` to remove that ambiguity.
 
+> **Recalculation status.** The MATLAB/INTLAB kernel and per-box smoke tests
+> pass, but no fresh full-cover result is checked in yet. The supplied Python
+> extract is not the run-of-record driver named in its own README: it omits
+> `eigbound_shrink.py`, the parent `quad_neumann_release/` tree, and
+> `GLOBAL_STEP_AUDIT.md`. A faithful run of the supplied `run_cover(n_init=3)`
+> reaches `qn:Jacobian` on boxes converging to the degenerate boundary of
+> `P_K`; those boxes are recorded as unverified rather than silently accepted.
+> The missing run-of-record source is required before the paper's global
+> certificate can be reproduced without changing its algorithm.
+
 The reference global run reported 1,420 verified boxes, 337 discarded boxes,
 1,683 bisections, no unverified boxes, maximum depth 26, and positive certified
 slack. A fresh MATLAB/INTLAB run writes its own record to
