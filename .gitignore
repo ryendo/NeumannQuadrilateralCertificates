@@ -1,0 +1,7 @@
+*.asv
+*.log
+.DS_Store
+tmp/
+results/local_new/
+results/global/worker_*.json
+results/global/log_*.txt

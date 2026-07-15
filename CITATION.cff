@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software, cite the accompanying paper."
+title: "Supplementary code for Maximizing Laplace--Neumann eigenvalues on quadrilaterals"
+authors:
+  - family-names: "Osting"
+    given-names: "Braxton"
+  - family-names: "Endo"
+    given-names: "Ryoki"
+version: 0.1.0
+date-released: 2026-07-15
+url: "https://github.com/ryendo/NeumannQuadrilateralCertificates"
+keywords:
+  - "Neumann eigenvalues"
+  - "shape optimization"
+  - "computer-assisted proof"
+  - "interval arithmetic"
+  - "MATLAB"
+  - "INTLAB"
+preferred-citation:
+  type: article
+  authors:
+    - family-names: "Osting"
+      given-names: "Braxton"
+    - family-names: "Endo"
+      given-names: "Ryoki"
+  title: "Maximizing Laplace--Neumann eigenvalues on quadrilaterals"
+  year: 2026
