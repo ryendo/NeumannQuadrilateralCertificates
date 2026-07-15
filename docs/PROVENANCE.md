@@ -36,6 +36,30 @@ accepted. `qn_run_global_cover` records the center, half-widths, depth, and
 failure reason for every such box so that a supplied run-of-record algorithm
 can be compared directly.
 
+## Algebraically regular stiffness representation
+
+The Python source evaluates the generic inverse-metric pullback of the
+stiffness form and therefore introduces a factor `1/J`. For the paper's actual
+trial space this factor is removable: the functions are restrictions of fixed
+ambient trigonometric functions, so
+
+```text
+grad_ref(psi o Phi) = DPhi' grad_x(psi)
+```
+
+and the inverse metric cancels to give `(grad_x psi_i . grad_x psi_j) J`.
+The MATLAB/INTLAB code evaluates this algebraically identical expression
+directly. This is not a change to the trial space, Rayleigh--Ritz pencil, box
+test, or subdivision algorithm. It removes the source representation's
+artificial pole at `c_i=J(corner)=0` and permits an entire-integrand GL
+remainder bound on triangle faces.
+
+The revised smoke test was run with MATLAB R2023b and INTLAB 12 on liulab. It
+enclosed the analytic square pencil, an interior pencil, and a parameter box
+crossing the genuine triangle face `c_3=0`. The boundary box was certified by
+the 2-vector Rayleigh route with positive certified margin (approximately
+`1.3612`).
+
 Porting rules:
 
 - The global cover geometry, D4 representative rule, gap threshold, 1-vector
@@ -50,8 +74,9 @@ Porting rules:
   forward-mode jet evaluates the INTLAB gradient over the complete parameter
   box, so `f(c)+Df(B)(B-c)` includes all parameter dependence directly and
   needs no Taylor remainder; no exposed
-  floating derivative is used. The same Bernstein-ellipse Gauss--Legendre
-  truncation padding is added. The spatial rule uses order 20 because the
+  floating derivative is used. Bernstein-ellipse Gauss--Legendre truncation
+  padding is added to both the center values and the parameter gradients in
+  the mean-value form. The spatial rule uses order 20 because the
   source kernel itself notes that global/far boxes require order at least about
   20; its default call left the order at 12, whose non-vanishing truncation pad
   cannot certify skewed interior points. Floating-point values choose frames

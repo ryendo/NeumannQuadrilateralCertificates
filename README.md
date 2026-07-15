@@ -74,15 +74,16 @@ first nonzero Neumann eigenvalue. The local and global regions overlap on
 The source Python code called the seam `RHO_SHARP`; this repository uses the
 paper-aligned names `rho_local` and `rho_seam` to remove that ambiguity.
 
-> **Recalculation status.** The MATLAB/INTLAB kernel and per-box smoke tests
-> pass, but no fresh full-cover result is checked in yet. The supplied Python
+> **Recalculation status.** No fresh full-cover result is checked in yet. The supplied Python
 > extract is not the run-of-record driver named in its own README: it omits
 > `eigbound_shrink.py`, the parent `quad_neumann_release/` tree, and
 > `GLOBAL_STEP_AUDIT.md`. A faithful run of the supplied `run_cover(n_init=3)`
 > reaches `qn:Jacobian` on boxes converging to the degenerate boundary of
-> `P_K`; those boxes are recorded as unverified rather than silently accepted.
-> The missing run-of-record source is required before the paper's global
-> certificate can be reproduced without changing its algorithm.
+> `P_K`. The current MATLAB/INTLAB assembly removes that artificial obstruction
+> by using the exactly equivalent physical-gradient formula described below.
+> On liulab, the revised smoke test certifies a box crossing the triangle face
+> `c_3=0` by the 2-vector route with positive margin (approximately `1.3612`). A new full global run is
+> still required before the global certificate can be declared complete.
 
 The reference global run reported 1,420 verified boxes, 337 discarded boxes,
 1,683 bisections, no unverified boxes, maximum depth 26, and positive certified
@@ -232,6 +233,24 @@ Rayleigh sweep when the interval discriminant crosses zero. Failed boxes are
 bisected using the source slack-driven coordinate rule; `qn_interval_box`
 outward-rounds each child without imposing a minimum box width.
 
+### Boundary-regular stiffness assembly
+
+For the ambient trigonometric trial functions used in the paper,
+`grad_ref(psi o Phi) = DPhi' * grad_x(psi)`. Hence the inverse-metric factors
+in the generic pullback cancel exactly and
+
+```text
+K_ij(p) = integral_square
+          (grad_x psi_i . grad_x psi_j)(Phi_p(u,v)) J(u,v;p) du dv.
+```
+
+The implementation assembles this form directly. It is algebraically
+identical to the source Rayleigh--Ritz pencil in the interior, but contains no
+division by `J` and remains regular when one corner value `J=c_i` vanishes on a
+triangle face. The Bernstein-ellipse GL pad is correspondingly an
+entire-integrand bound; it also encloses the quadrature errors in the
+box-uniform parameter gradients used by the mean-value form.
+
 ## Paper-to-code map
 
 | paper item | implementation |
@@ -253,7 +272,8 @@ outward-rounds each child without imposing a minimum box width.
 - A global box is accepted only when INTLAB proves positivity of the mass
   matrix by interval LDL and `sup(Q(B)*Lambda(V;B)) < inf(pi^2)`.
 - The 20-by-20 GL quadrature is not treated as exact: every stiffness, raw
-  mass, and mean entry is widened by the Bernstein-ellipse truncation bound.
+  mass, and mean entry, and every parameter derivative used in its mean-value
+  enclosure, is widened by the Bernstein-ellipse truncation bound.
 - Center eigensolves and finite-difference sensitivities are non-certified,
   but they only select a frame and split coordinate; the box theorem is valid
   for any such choices.

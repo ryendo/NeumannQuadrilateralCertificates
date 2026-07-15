@@ -1,5 +1,7 @@
 function [K, M, area] = qn_km_float(p)
 % Non-certified center assembly. Used only to choose a test frame and split axis.
+% Use the same exactly cancelled physical-gradient stiffness form as the
+% certified assembly, so center evaluation is also defined on triangle faces.
 
 [xi, wi] = qn_gauss_legendre_20();
 x = mid(xi); w = mid(wi);
@@ -16,24 +18,21 @@ for iu = 1:20
         Xu = 1-a-2*b*v; Xv = -(d+2*b*u);
         Yu = -(d-2*c*v); Yv = 1+a+2*c*u;
         J = Xu*Yv-Xv*Yu;
-        gvv = Xv^2+Yv^2; guv = Xu*Xv+Yu*Yv; guu = Xu^2+Yu^2;
         area = area + J*W;
-        phi = zeros(5,1); phiu = zeros(5,1); phiv = zeros(5,1);
+        phi = zeros(5,1); psiX = zeros(5,1); psiY = zeros(5,1);
         for q = 1:5
             mm = modes(q,1); nn = modes(q,2);
             cx = cos(mm*pi*(X+0.5)); sx = sin(mm*pi*(X+0.5));
             cy = cos(nn*pi*(Y+0.5)); sy = sin(nn*pi*(Y+0.5));
             phi(q) = cx*cy;
-            psiX = -mm*pi*sx*cy; psiY = -nn*pi*cx*sy;
-            phiu(q) = psiX*Xu + psiY*Yu;
-            phiv(q) = psiX*Xv + psiY*Yv;
+            psiX(q) = -mm*pi*sx*cy;
+            psiY(q) = -nn*pi*cx*sy;
         end
         means = means + phi*J*W;
         for i = 1:5
             for j = i:5
-                K(i,j) = K(i,j) + (gvv*phiu(i)*phiu(j) ...
-                    - guv*(phiu(i)*phiv(j)+phiv(i)*phiu(j)) ...
-                    + guu*phiv(i)*phiv(j))/J*W;
+                K(i,j) = K(i,j) + ...
+                    (psiX(i)*psiX(j)+psiY(i)*psiY(j))*J*W;
                 Mraw(i,j) = Mraw(i,j) + phi(i)*phi(j)*J*W;
             end
         end
