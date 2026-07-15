@@ -5,6 +5,8 @@
   "top_level_boxes": 13824,
   "certified_boxes": 13824,
   "failures": 0,
+  "id_coverage_complete": true,
+  "done_markers_complete": true,
   "minimum_certified_lower_bound_for_S": "0.00493500422156500917",
   "minimum_S_box_id": 10144,
   "maximum_subdivision_depth": 2,

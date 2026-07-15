@@ -47,6 +47,8 @@ The saved result in `results/local/` has been checked as:
 | top-level boxes | 13,824 |
 | certified boxes | 13,824 |
 | failures | 0 |
+| box-ID coverage | complete, with no duplicates |
+| worker completion markers | 48/48 |
 | minimum lower bound for `S` | 0.00493500422156500917 |
 | minimum lower bound for `lambda_1` | 7.58452255183086610 |
 | maximum upper bound for `lambda_2` | 13.2685132182832994 |
