@@ -29,8 +29,9 @@ Porting rules:
   not enforce.
 - Arb intervals are replaced by INTLAB `intval` intervals.
 - Decimal proof constants are constructed with `intval('...')`.
-- The pencil uses a centered mean-value enclosure. INTLAB evaluates the
-  gradient over the complete parameter box, so `f(c)+Df(B)(B-c)` includes all
+- The pencil uses a centered mean-value enclosure. A lightweight explicit
+  forward-mode jet evaluates the INTLAB gradient over the complete parameter
+  box, so `f(c)+Df(B)(B-c)` includes all
   parameter dependence directly and needs no Taylor remainder; no exposed
   floating derivative is used. The same Bernstein-ellipse Gauss--Legendre
   truncation padding is added. The spatial rule uses order 20 because the source kernel itself notes

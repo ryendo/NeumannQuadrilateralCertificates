@@ -9,7 +9,7 @@ center=center(:); half_widths=half_widths(:); pbox=qn_interval_box(center,half_w
 pc=intval(zeros(4,1));
 for k=1:4, pc(k)=intval(sprintf('%.17g',center(k))); end
 [Kc,Rc,mc]=qn_assemble_ad(pc);
-[Kg,Rg,mg]=qn_assemble_ad(gradientinit(pbox));
+[Kg,Rg,mg]=qn_assemble_jet1(pbox);
 [epsK,epsM,padinfo]=qn_gl_pad(pbox,20);
 
 K=intval(zeros(5)); R=intval(zeros(5)); means=intval(zeros(5,1));
@@ -28,7 +28,7 @@ info=padinfo;
 end
 
 function y=mean_value(at_center,on_box,hw)
-y=at_center; g=on_box.dx;
+y=at_center; g=on_box.g;
 for k=1:4
     h=intval(sprintf('%.17g',hw(k)));
     y=y+g(k)*infsup(-sup(h),sup(h));
