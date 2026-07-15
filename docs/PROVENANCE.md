@@ -31,11 +31,11 @@ Porting rules:
 - Decimal proof constants are constructed with `intval('...')`.
 - The pencil uses a centered mean-value enclosure. A lightweight explicit
   forward-mode jet evaluates the INTLAB gradient over the complete parameter
-  box, so `f(c)+Df(B)(B-c)` includes all
-  parameter dependence directly and needs no Taylor remainder; no exposed
+  box, so `f(c)+Df(B)(B-c)` includes all parameter dependence directly and
+  needs no Taylor remainder; no exposed
   floating derivative is used. The same Bernstein-ellipse Gauss--Legendre
-  truncation padding is added. The spatial rule uses order 20 because the source kernel itself notes
-  that global/far boxes require order at least about 20; its default call left
-  the order at 12, whose non-vanishing truncation pad cannot certify skewed
-  interior points. Floating-point values choose frames and split coordinates
-  only.
+  truncation padding is added. The spatial rule uses order 20 because the
+  source kernel itself notes that global/far boxes require order at least about
+  20; its default call left the order at 12, whose non-vanishing truncation pad
+  cannot certify skewed interior points. Floating-point values choose frames
+  and split coordinates only.

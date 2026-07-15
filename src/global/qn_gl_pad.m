@@ -1,5 +1,5 @@
 function [epsK, epsM, info] = qn_gl_pad(p,N)
-% Certified Bernstein-ellipse pad for the 12x12 spatial GL rule.
+% Certified Bernstein-ellipse pad for the spatial tensor GL rule.
 % Mechanical INTLAB translation of _kernel/gl_pad_v2.py (value slot).
 
 if nargin<2, N=20; end
