@@ -17,8 +17,9 @@ count_markers() {
   find "$directory" -maxdepth 1 -name "$pattern" -print 2>/dev/null | wc -l | tr -d ' '
 }
 
-echo "Waiting for ${WORKERS_GLOBAL:-10} global workers in ${GLOBAL_RESULTS}."
-while [[ "$(count_markers "$GLOBAL_RESULTS" 'done_*.txt')" -lt "${WORKERS_GLOBAL:-10}" ]]; do
+GLOBAL_MARKER_PATTERN="${GLOBAL_MARKER_PATTERN:-worker_*.json}"
+echo "Waiting for ${WORKERS_GLOBAL:-10} global worker JSON files in ${GLOBAL_RESULTS}."
+while [[ "$(count_markers "$GLOBAL_RESULTS" "$GLOBAL_MARKER_PATTERN")" -lt "${WORKERS_GLOBAL:-10}" ]]; do
   date
   sleep 60
 done
