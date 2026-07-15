@@ -18,13 +18,20 @@ for k=1:numel(allboxes)
 end
 initial_retained_all=numel(stack);
 stack=stack(worker_id:worker_count:end);
+% Preserve a genuine column stack after linear worker slicing.  If a row cell
+% reaches a two-subscript append, MATLAB can expand the other columns with
+% empty cells; a later pop would then return [] instead of a box struct.
+stack=stack(:);
 initial_retained=numel(stack);
 cert=0; disc=0; bis=0; unv=0; two=0; max_d=0;
 min_margin=inf; min_at=[]; t0=tic;
 unverified_boxes=struct('center',{},'half_widths',{},'depth',{}, ...
     'reason',{},'gap',{},'split_dim',{});
 while ~isempty(stack)
-    B=stack{end}; stack(end)=[]; max_d=max(max_d,B.depth);
+    B=stack{end,1}; stack(end,:)=[];
+    assert(isstruct(B) && isscalar(B) && isfield(B,'depth'), ...
+        'qn:StackCorrupt','Global cover stack contains a non-box entry.');
+    max_d=max(max_d,B.depth);
     if qn_box_inside_ball(B.center,B.half_widths,C.rho_seam) || ...
             qn_box_outside_pk(B.center,B.half_widths)
         disc=disc+1; continue;
