@@ -55,6 +55,14 @@ The saved result in `results/local/` has been checked as:
 | maximum subdivision depth | 2 |
 | wall time | 13.41 h on 48 workers |
 
+This saved run predates the 2026-07-16 rounding hardening.  The hardening keeps
+the same mathematical algorithm but accumulates every Taylor-remainder cell
+bound and every Gershgorin row radius with outward-rounded INTLAB operations.
+It also records the coarse `eta/beta` bound separately from the exact
+root-identity refinement.  Until the scheduled full rerun finishes, the table
+above is retained as the historical run of record rather than a refreshed
+result of the hardened code.
+
 ### Global step
 
 The global computation certifies
@@ -144,6 +152,14 @@ report = r.smokeTest();
 The smoke test checks that the certified global pencil enclosure contains the
 floating-point center value, exercises a representative per-box test, and
 verifies the saved local CSV set.
+
+The focused local proof-path regression test additionally exercises rigorous
+Taylor-remainder accumulation, the coarse Algorithm-1 bound, and the exact
+root-identity refinement:
+
+```matlab
+report = qn_local_rigour_test(r.Root);
+```
 
 From a shell:
 
@@ -269,6 +285,10 @@ box-uniform parameter gradients used by the mean-value form.
 - INTLAB outward rounding and the explicit Taylor/GL remainder bounds are
   soundness-critical.
 - A local box is accepted only when INTLAB proves `inf(S)>0`.
+- Cellwise Taylor-remainder magnitudes and Gershgorin row radii are summed as
+  intervals; floating-point endpoint sums are not used as certified bounds.
+- The coarse `eta/beta` lower bound and the exact root-identity improvement are
+  both retained in the per-box result structure for audit.
 - A global box is accepted only when INTLAB proves positivity of the mass
   matrix by interval LDL and `sup(Q(B)*Lambda(V;B)) < inf(pi^2)`.
 - The 20-by-20 GL quadrature is not treated as exact: every stiffness, raw

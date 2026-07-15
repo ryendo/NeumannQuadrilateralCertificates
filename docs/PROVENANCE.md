@@ -4,6 +4,15 @@ The local certificate was imported from `ryendo/dq2-quadrilateral-certificate`
 at commit `6d44991af03102a2338e7af69c67767a32e55178` (2026-06-18). The saved
 48-worker result was copied byte-for-byte before the paths were reorganized.
 
+On 2026-07-16 the integrated copy was hardened in two proof-critical places:
+Taylor-remainder bounds from the spatial cells are now accumulated as INTLAB
+intervals before extracting their upper endpoints, and the Gershgorin row
+radii used for `M(te)>0` are summed in interval arithmetic.  The exact 2-by-2
+root-identity refinement already used by the imported code is now exposed in
+the result diagnostics and documented as a proved refinement of Algorithm 1
+in the paper.  The historical saved result predates this hardening and a fresh
+48-worker local run is required before replacing it.
+
 The global MATLAB/INTLAB implementation is a line-by-line mathematical port of
 the local `quad_neumann_global` Python/Arb extract supplied with the paper on
 2026-07-15. Important source SHA-256 values are:

@@ -18,7 +18,10 @@ if nargin < 4, ord = 10; end
 PI = intval('pi');
 h = intval(1)/intval(Ncell);
 edges = intval('-0.5') + h*intval(0:Ncell);
-BK = zeros(5); BM = zeros(5); Bb = zeros(5,1);
+% Accumulate the cellwise upper bounds in interval arithmetic.  Accumulating
+% the extracted endpoints in ordinary doubles would not guarantee that the
+% sum is rounded upward.
+BK = intval(zeros(5)); BM = intval(zeros(5)); Bb = intval(zeros(5,1));
 pr = zeros(15,2); c = 0;
 for i = 1:5
     for j = i:5
@@ -35,7 +38,7 @@ for iu = 1:Ncell
         for kk = 1:35
             g = out{kk};
             co = g{ord};                      % order-ord Taylor coefficient
-            w = sup(sqr(h)*intval(mag(co)));  % interval magnitude bound for the integral remainder
+            w = sqr(h)*intval(mag(co));       % nonnegative interval upper bound for the cell integral
             if kk <= 15
                 BK(pr(kk,1), pr(kk,2)) = BK(pr(kk,1), pr(kk,2)) + w;
             elseif kk <= 30
@@ -47,4 +50,7 @@ for iu = 1:Ncell
     end
 end
 BK = BK + triu(BK,1)'; BM = BM + triu(BM,1)';
+% The callers need radius matrices.  Extract only after the complete sum has
+% been formed with outward-rounded interval additions.
+BK = sup(BK); BM = sup(BM); Bb = sup(Bb);
 end

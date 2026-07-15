@@ -96,7 +96,9 @@ X0I = V5'*KM1*V5;                            % E_0 block of the first-order penc
 
 results = repmat(struct('ok',true,'infS',inf,'reason','skip','lam1',[],'lam2',[], ...
                         'S_interval',[],'L_interval',[],'E_B',0,'nu_window',[], ...
-                        'S_padding',0,'S_core_hessian',[]), m, 1);
+                        'S_padding',0,'S_core_hessian',[], ...
+                        'root_identity_used',false,'algorithm1_infS',-inf, ...
+                        'root_identity_gain',0), m, 1);
 for k = t_levels(:)'
     results(k).ok = false; results(k).infS = -inf; results(k).reason = '';
     t = interval_hull(radial_edges(k), radial_edges(k+1));
@@ -171,8 +173,12 @@ for k = t_levels(:)'
     Mte = M0 + t*schur.DtM;                   % M(te), Eqs. (3), (57), positive-definite check
     gersh = true;
     for i = 1:5
-        off = sum(mag(Mte(i,:))) - mag(Mte(i,i));
-        if inf(Mte(i,i)) - off <= 0, gersh = false; break; end
+        jj = [1:i-1, i+1:5];
+        % mag(...) gives componentwise floating-point upper bounds.  Convert
+        % them back to intervals before summing so the row-radius sum is
+        % guaranteed to be rounded upward.
+        off = sum(intval(mag(Mte(i,jj))));
+        if inf(Mte(i,i) - off) <= 0, gersh = false; break; end
     end
     if ~gersh, results(k).reason = 'W1'; continue; end
     sbar = upper_abs(I_nu);
@@ -185,6 +191,11 @@ for k = t_levels(:)'
     P_B = d0_B/d2_B + midrad(0, P_padding);   % P_B interval, Eq. (64)
     nu1_interval = mu1 + midrad(0, E_B);      % ν₁ root enclosure, Eq. (53)
     nu2_interval = mu2 + midrad(0, E_B);      % ν₂ root enclosure, Eq. (53)
+    % Save the coarse eta/beta enclosure before applying the exact root
+    % identity below.  The identity is part of the certified box algorithm;
+    % keeping both bounds makes its contribution auditable in diagnostics.
+    S_B_algorithm1 = S_B;
+    root_identity_used = false;
     % ---- signed second-order correction via the exact 2x2 root identity ----
     gap = nu2_interval - nu1_interval;
     if inf(gap) > 0
@@ -209,6 +220,7 @@ for k = t_levels(:)'
             root_shift_over_t(kk) = (trace_adj_residual - det_residual_over_t)/(d2_B*root_gap);
         end
         if root_identity_ok
+            root_identity_used = true;
             L_correction = root_shift_over_t(1) + root_shift_over_t(2); % (δ₁+δ₂)/t
             P_correction = t*(nu1_interval*root_shift_over_t(2) + nu2_interval*root_shift_over_t(1)) + ...
                            sqr(t)*root_shift_over_t(1)*root_shift_over_t(2);
@@ -224,8 +236,8 @@ for k = t_levels(:)'
             nu2_interval = intersect(nu2_interval, mu2 + t*root_shift_over_t(2));
         end
     end
-    lam1 = PI2 + t*nu1_interval;              % λ₁(te), Eq. (5)
-    lam2 = PI2 + t*nu2_interval;              % λ₂(te), Eq. (5)
+    lam1 = PI2 + t*nu1_interval;              % refined λ₁(te), Eq. (5)
+    lam2 = PI2 + t*nu2_interval;              % refined λ₂(te), Eq. (5)
     results(k).infS = inf(S_B);
     results(k).lam1 = [inf(lam1), sup(lam1)];
     results(k).lam2 = [inf(lam2), sup(lam2)];
@@ -235,6 +247,9 @@ for k = t_levels(:)'
     results(k).nu_window = [inf(mu1), sup(mu2)];
     results(k).S_padding = S_padding;
     results(k).S_core_hessian = S_core_G;
+    results(k).root_identity_used = root_identity_used;
+    results(k).algorithm1_infS = inf(S_B_algorithm1);
+    results(k).root_identity_gain = inf(S_B) - inf(S_B_algorithm1);
     if inf(S_B) > 0 && inf(lam1) > 0
         results(k).ok = true;
     else
