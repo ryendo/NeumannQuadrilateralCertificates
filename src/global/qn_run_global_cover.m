@@ -24,9 +24,27 @@ stack=stack(worker_id:worker_count:end);
 stack=stack(:);
 initial_retained=numel(stack);
 cert=0; disc=0; bis=0; unv=0; two=0; max_d=0;
-min_margin=inf; min_at=[]; t0=tic;
+min_margin=inf; min_at=[]; prior_wall=0;
 unverified_boxes=struct('center',{},'half_widths',{},'depth',{}, ...
     'reason',{},'gap',{},'split_dim',{});
+checkpoint_file='';
+if ~isempty(output_file)
+    checkpoint_file=[output_file '.checkpoint.mat'];
+    if isfile(checkpoint_file)
+        saved=load(checkpoint_file,'state'); state=saved.state;
+        assert(state.version==1 && state.worker_id==worker_id && ...
+            state.worker_count==worker_count && state.n_init==n_init && ...
+            state.max_depth==max_depth,'qn:CheckpointMismatch', ...
+            'Global-cover checkpoint does not match this worker invocation.');
+        stack=state.stack(:); cert=state.cert; disc=state.disc;
+        bis=state.bis; unv=state.unv; two=state.two; max_d=state.max_d;
+        min_margin=state.min_margin; min_at=state.min_at;
+        unverified_boxes=state.unverified_boxes; prior_wall=state.wall_seconds;
+        fprintf('RESUME global worker=%d cert=%d disc=%d bis=%d stack=%d wall_s=%.1f\n', ...
+            worker_id,cert,disc,bis,numel(stack),prior_wall);
+    end
+end
+t0=tic;
 while ~isempty(stack)
     B=stack{end,1}; stack(end,:)=[];
     assert(isstruct(B) && isscalar(B) && isfield(B,'depth'), ...
@@ -34,7 +52,11 @@ while ~isempty(stack)
     max_d=max(max_d,B.depth);
     if qn_box_inside_ball(B.center,B.half_widths,C.rho_seam) || ...
             qn_box_outside_pk(B.center,B.half_widths)
-        disc=disc+1; continue;
+        disc=disc+1;
+        maybe_checkpoint(checkpoint_file,stack,cert,disc,bis,unv,two,max_d, ...
+            min_margin,min_at,unverified_boxes,prior_wall+toc(t0), ...
+            worker_id,worker_count,n_init,max_depth);
+        continue;
     end
     [verdict,info,gap,sdim]=qn_certify_box(B.center,B.half_widths);
     if strcmp(verdict,'cert')
@@ -56,11 +78,14 @@ while ~isempty(stack)
     if verbose && mod(cert+disc+bis,200)==0
         fprintf('global: cert=%d disc=%d bis=%d unv=%d stack=%d\n',cert,disc,bis,unv,numel(stack));
     end
+    maybe_checkpoint(checkpoint_file,stack,cert,disc,bis,unv,two,max_d, ...
+        min_margin,min_at,unverified_boxes,prior_wall+toc(t0), ...
+        worker_id,worker_count,n_init,max_depth);
 end
 result=struct('verified',cert,'discarded',disc,'bisected',bis, ...
     'unverified',unv,'two_vector',two,'max_depth',max_d, ...
     'min_certified_margin',min_margin,'min_margin_at',min_at, ...
-    'wall_seconds',toc(t0),'n_init',n_init,'initial_retained',initial_retained, ...
+    'wall_seconds',prior_wall+toc(t0),'n_init',n_init,'initial_retained',initial_retained, ...
     'initial_retained_all',initial_retained_all,'worker_id',worker_id, ...
     'worker_count',worker_count,'rho_seam',mid(C.rho_seam),'complete',unv==0);
 result.unverified_boxes=unverified_boxes;
@@ -68,8 +93,25 @@ fprintf(['RESULT global verified=%d discarded=%d bisected=%d unverified=%d ' ...
     'two_vector=%d max_depth=%d min_certified_margin=%.17g wall_s=%.1f\n'], ...
     cert,disc,bis,unv,two,max_d,min_margin,result.wall_seconds);
 if ~isempty(output_file)
-    fid=fopen(output_file,'w'); assert(fid>=0,'Cannot open output file.');
+    temporary_output=[output_file '.tmp'];
+    fid=fopen(temporary_output,'w'); assert(fid>=0,'Cannot open output file.');
     cleanup=onCleanup(@() fclose(fid)); %#ok<NASGU>
     fprintf(fid,'%s\n',jsonencode(result,'PrettyPrint',true));
+    clear cleanup
+    movefile(temporary_output,output_file,'f');
+    if isfile(checkpoint_file), delete(checkpoint_file); end
 end
+end
+
+function maybe_checkpoint(filename,stack,cert,disc,bis,unv,two,max_d, ...
+        min_margin,min_at,unverified_boxes,wall_seconds,worker_id,worker_count,n_init,max_depth)
+if isempty(filename) || mod(cert+disc+bis+unv,10)~=0, return; end
+state=struct('version',1,'stack',{stack(:)},'cert',cert,'disc',disc, ...
+    'bis',bis,'unv',unv,'two',two,'max_d',max_d,'min_margin',min_margin, ...
+    'min_at',min_at,'unverified_boxes',unverified_boxes, ...
+    'wall_seconds',wall_seconds,'worker_id',worker_id, ...
+    'worker_count',worker_count,'n_init',n_init,'max_depth',max_depth);
+temporary=[filename '.tmp.mat'];
+save(temporary,'state','-v7');
+movefile(temporary,filename,'f');
 end
