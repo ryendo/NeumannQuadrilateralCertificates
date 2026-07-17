@@ -73,7 +73,7 @@ EG = e_from_x(xhb, axisdim, sgn);           % e over E_j, Hessian enclosure for 
 if nargin >= 4 && ~isempty(parent_remainder_bounds)
     BKr = parent_remainder_bounds.BK; BMr = parent_remainder_bounds.BM; Bbr = parent_remainder_bounds.Bb; % inherited interval remainders R_K, R_M, R_b
 else
-    [BKr, BMr, Bbr] = dq2_bound_taylor_remainder(EI, radial_edges(end), 2, 10); % direct INTLAB Taylor remainder
+    [BKr, BMr, Bbr] = dq2_bound_taylor_remainder_vectorized(EI, radial_edges(end), 2, 10); % direct INTLAB Taylor remainder
 end
 REM = struct('BK', BKr, 'BM', BMr, 'Bb', Bbr);
 EK = midrad(zeros(5), BKr); EM = midrad(zeros(5), BMr); Eb = midrad(zeros(5,1), Bbr); % interval R_K, R_M, R_b
@@ -82,9 +82,9 @@ if nargin < 5 || isempty(t_levels)
 end
 
 % Symbolic Taylor coefficient table evaluated in three rigorous modes:
-[CKI, CMI, CbI] = dq2_evaluate_taylor_coefficients(TC, EI(1), EI(2), EI(3), EI(4)); % whole-box INTLAB intervals
-[CKP, CMP, CbP] = dq2_evaluate_taylor_coefficients(TC, EP(1), EP(2), EP(3), EP(4)); % center value/gradient
-[CKG, CMG, CbG] = dq2_evaluate_taylor_coefficients(TC, EG(1), EG(2), EG(3), EG(4)); % Hessian enclosure over box
+[CKI, CMI, CbI] = dq2_evaluate_taylor_coefficients_vectorized(TC, EI(1), EI(2), EI(3), EI(4)); % whole-box INTLAB intervals
+[CKP, CMP, CbP] = dq2_evaluate_taylor_coefficients_vectorized(TC, EP(1), EP(2), EP(3), EP(4)); % center value/gradient
+[CKG, CMG, CbG] = dq2_evaluate_taylor_coefficients_vectorized(TC, EG(1), EG(2), EG(3), EG(4)); % Hessian enclosure over box
 
 qI = sqr(EI(1)) + sqr(EI(4));                 % q(e) in Eq. (8)
 qP = EP(1)*EP(1) + EP(4)*EP(4);

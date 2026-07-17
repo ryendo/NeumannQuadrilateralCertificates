@@ -9,8 +9,8 @@ function [K,M,area,info] = qn_km_enclosure(center,half_widths)
 center=center(:); half_widths=half_widths(:); pbox=qn_interval_box(center,half_widths);
 pc=intval(zeros(4,1));
 for k=1:4, pc(k)=intval(sprintf('%.17g',center(k))); end
-[Kc,Rc,mc]=qn_assemble_ad(pc);
-[Kg,Rg,mg]=qn_assemble_jet1(pbox);
+[Kc,Rc,mc]=qn_assemble_interval_center(pc);
+[Kg,Rg,mg]=qn_assemble_interval_grad(pbox);
 [epsK,epsM,padinfo,epsGradK,epsGradM]=qn_gl_pad(pbox,20);
 
 K=intval(zeros(5)); R=intval(zeros(5)); means=intval(zeros(5,1));

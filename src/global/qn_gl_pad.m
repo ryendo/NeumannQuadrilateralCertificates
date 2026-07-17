@@ -16,10 +16,8 @@ Xv_ub = intval(D) + intval(B);
 Yu_ub = intval(D) + intval(C);
 freq_u = twoPI*(Xu_ub+Yu_ub);
 freq_v = twoPI*(Xv_ub+Yv_ub);
-[euK,eguK] = one_direction(freq_u,A,B,C,D,true,N);
-[evK,egvK] = one_direction(freq_v,A,B,C,D,true,N);
-[euM,eguM] = one_direction(freq_u,A,B,C,D,false,N);
-[evM,egvM] = one_direction(freq_v,A,B,C,D,false,N);
+[euK,eguK,euM,eguM] = one_direction(freq_u,A,B,C,D,N);
+[evK,egvK,evM,egvM] = one_direction(freq_v,A,B,C,D,N);
 epsK = intval('2')*(euK+evK);
 epsM = intval('2')*(euM+evM);
 epsGradK = intval('2')*(eguK+egvK);
@@ -30,7 +28,7 @@ info = struct('representation','physical_gradient_entire', ...
     'epsGradK',epsGradK,'epsGradM',epsGradM);
 end
 
-function [e,eg] = one_direction(freq,A,B,C,D,isK,N)
+function [eK,egK,eM,egM] = one_direction(freq,A,B,C,D,N)
 one = intval('1'); a = intval('1.5');
 % A fixed ellipse is deliberately used: any a>1 is valid for these entire
 % integrands, and a point interval avoids a parameter-dependent ellipse.
@@ -47,21 +45,20 @@ dJc = dJb;
 dJd = intval('2')*D+a*(B+C);
 dJ = max(max(dJa,dJb),max(dJc,dJd));
 
-if isK
-    % |q_i'*q_j| <= 8*pi^2 times the combined trig envelope.  A parameter
-    % derivative of that product is bounded by 64*pi^3*shape; the constants
-    % cover both physical components and both differentiated factors.
-    coef = intval('8')*intval('pi')^2*Jell;
-    coefg = intval('64')*intval('pi')^3*shape*Jell ...
-        + intval('8')*intval('pi')^2*dJ;
-else
-    % The same bound covers raw mass entries and single-mode means.
-    coef = Jell;
-    coefg = intval('4')*intval('pi')*shape*Jell+dJ;
-end
-Mrho = cosh(freq*b)*coef;
-Mrhog = cosh(freq*b)*coefg;
+% |q_i'*q_j| <= 8*pi^2 times the combined trig envelope.  A parameter
+% derivative of that product is bounded by 64*pi^3*shape; the constants
+% cover both physical components and both differentiated factors.
+coefK = intval('8')*intval('pi')^2*Jell;
+coefgK = intval('64')*intval('pi')^3*shape*Jell ...
+    + intval('8')*intval('pi')^2*dJ;
+% The same bound covers raw mass entries and single-mode means.
+coefM = Jell;
+coefgM = intval('4')*intval('pi')*shape*Jell+dJ;
+trigEnvelope=cosh(freq*b);
 Cgl = intval('64')/intval('15');
-e = Cgl*Mrho/(rho^(2*N))/(one-one/rho^2);
-eg = Cgl*Mrhog/(rho^(2*N))/(one-one/rho^2);
+factor=Cgl/(rho^(2*N))/(one-one/rho^2);
+eK=factor*trigEnvelope*coefK;
+egK=factor*trigEnvelope*coefgK;
+eM=factor*trigEnvelope*coefM;
+egM=factor*trigEnvelope*coefgM;
 end

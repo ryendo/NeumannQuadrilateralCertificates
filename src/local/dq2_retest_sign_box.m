@@ -43,7 +43,7 @@ xhp = hessianinit(xc);
 EP = e_from_x(xhp, axisdim, sgn);
 EK = midrad(zeros(5), parent_data.REM.BK); EM = midrad(zeros(5), parent_data.REM.BM);
 Eb = midrad(zeros(5,1), parent_data.REM.Bb);
-[CKP, CMP, CbP] = dq2_evaluate_taylor_coefficients(TC, EP(1), EP(2), EP(3), EP(4)); % symbolic coefficients -> center Hessian data
+[CKP, CMP, CbP] = dq2_evaluate_taylor_coefficients_vectorized(TC, EP(1), EP(2), EP(3), EP(4)); % symbolic coefficients -> center Hessian data
 qP = EP(1)*EP(1) + EP(4)*EP(4);
 
 m = size(radial_grid, 2) - 1;

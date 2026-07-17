@@ -120,17 +120,24 @@ decision is made from INTLAB interval endpoints.
 │   ├── local/                       DQ2 local certificate
 │   │   ├── dq2_run_certificate.m
 │   │   ├── dq2_algorithm1_box.m
+│   │   ├── dq2_evaluate_taylor_coefficients_vectorized.m
+│   │   ├── dq2_bound_taylor_remainder_vectorized.m
 │   │   └── qn_summarize_local_results.m
 │   └── global/                      adaptive global certificate
 │       ├── qn_run_global_cover.m
 │       ├── qn_certify_box.m
 │       ├── qn_km_enclosure.m
+│       ├── qn_assemble_interval_center.m
+│       ├── qn_assemble_interval_grad.m
 │       └── qn_gl_pad.m
 ├── data/local/taylor_coefficients.mat
 ├── results/
 │   ├── local/                       saved 48-worker certified run
 │   └── global/                      output of a fresh global run
 ├── tests/qn_smoke_test.m
+├── tests/qn_global_vectorization_test.m
+├── tests/dq2_vectorization_test.m
+├── tests/dq2_remainder_vectorization_test.m
 ├── scripts/
 │   ├── run_local_workers.sh
 │   ├── run_global.sh
@@ -159,7 +166,14 @@ root-identity refinement:
 
 ```matlab
 report = qn_local_rigour_test(r.Root);
+global_fast = qn_global_vectorization_test(r.Root);
+local_fast = dq2_vectorization_test(r.Root);
+remainder_fast = dq2_remainder_vectorization_test(r.Root);
 ```
+
+The vectorization regressions retain the former scalar INTLAB kernels as
+independent references. They compare every stiffness, raw-mass, mean, gradient,
+and local Hessian interval, and exercise a global box crossing `c_3=0`.
 
 From a shell:
 
@@ -267,13 +281,31 @@ triangle face. The Bernstein-ellipse GL pad is correspondingly an
 entire-integrand bound; it also encloses the quadrature errors in the
 box-uniform parameter gradients used by the mean-value form.
 
+### Proof-preserving vectorization
+
+The global assembly evaluates the same 20-by-20 interval GL rule as the scalar
+reference, but batches its 400 nodes in INTLAB arrays. Parameter derivatives
+are the explicit chain-rule formulas for `X`, `Y`, `J`, the five modes, and
+their physical gradients; no derivative is approximated by floating point.
+On a representative liulab box, the complete warm per-box test decreased from
+about 25.2 seconds to 0.24 seconds. The scalar implementation remains in the
+repository solely for interval-overlap regression tests.
+
+The local code similarly evaluates the existing exact monomial coefficient
+table by exponent groups and batches the four Taylor-remainder integration
+cells. Generic Hessian `0^0` is deliberately avoided: exponent zero is assigned
+as the exact constant one and positive powers are built recursively. On the
+focused local regression, the certified lower bound increased slightly while
+the first-call wall time decreased from about 17.3 seconds to 8.3 seconds.
+These timing values are diagnostics, not proof inputs.
+
 ## Paper-to-code map
 
 | paper item | implementation |
 |---|---|
 | local single-box Algorithm 1 | `src/local/dq2_algorithm1_box.m` |
 | local cover and subdivision | `src/local/dq2_run_certificate.m` |
-| local Taylor remainder | `src/local/dq2_bound_taylor_remainder.m` |
+| local Taylor remainder | `src/local/dq2_bound_taylor_remainder_vectorized.m` |
 | Proposition `p:box-bound` | `src/global/qn_certify_box.m` |
 | interval pencil `K(B),M(B)` | `src/global/qn_km_enclosure.m` |
 | GL truncation enclosure | `src/global/qn_gl_pad.m` |
@@ -287,6 +319,9 @@ box-uniform parameter gradients used by the mean-value form.
 - A local box is accepted only when INTLAB proves `inf(S)>0`.
 - Cellwise Taylor-remainder magnitudes and Gershgorin row radii are summed as
   intervals; floating-point endpoint sums are not used as certified bounds.
+- Vectorized kernels use only INTLAB operations for proof quantities. Their
+  scalar reference implementations remain covered by componentwise interval
+  overlap/subset tests.
 - The coarse `eta/beta` lower bound and the exact root-identity improvement are
   both retained in the per-box result structure for audit.
 - A global box is accepted only when INTLAB proves positivity of the mass
