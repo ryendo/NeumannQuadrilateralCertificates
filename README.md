@@ -1,7 +1,5 @@
 # Certified Neumann-eigenvalue bounds for quadrilaterals
 
-> **Private supplementary-code repository. Do not make this repository public.**
-
 This repository contains the MATLAB + INTLAB computations accompanying
 
 > Braxton Osting and Ryoki Endo, *Maximizing Laplace--Neumann eigenvalues on
