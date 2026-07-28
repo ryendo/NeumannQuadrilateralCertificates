@@ -14,7 +14,8 @@ end
 assert(all(cellfun(@(x)x.n_init==items{1}.n_init,items)),'n_init differs across workers.');
 assert(all(cellfun(@(x)x.initial_retained_all==items{1}.initial_retained_all,items)), ...
     'Initial-cover size differs across workers.');
-fields={'verified','discarded','bisected','unverified','two_vector','initial_retained'};
+fields={'verified','discarded','bisected','unverified','two_vector', ...
+    'veigs_certified','initial_retained'};
 result=struct();
 for f=1:numel(fields)
     name=fields{f}; total=0;

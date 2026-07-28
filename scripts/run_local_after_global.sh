@@ -11,6 +11,7 @@ if [[ -z "${INTLAB_ROOT_PATTERN:-}" ]]; then
   echo "Set INTLAB_ROOT_PATTERN before launching this watcher." >&2
   exit 2
 fi
+: "${VEIGS_ROOT:?Set VEIGS_ROOT to the pinned veigs checkout.}"
 
 count_markers() {
   local directory="$1" pattern="$2"

@@ -46,6 +46,7 @@ W5 = intval(zeros(5,3)); W5(3,1) = intval(2); W5(4,2) = SQ2; W5(5,3) = SQ2; % E_
 D0 = intval(zeros(3)); D0(1,1) = PI2; D0(2,2) = 3*PI2; D0(3,3) = 3*PI2;    % D_perp, Eq. (22)
 I2 = intval(eye(2)); I3 = intval(eye(3));
 M0 = intval(diag([1/2,1/2,1/4,1/2,1/2]));
+K0 = intval(diag([PI2/2,PI2/2,PI2/2,2*PI2,2*PI2]));
 FR = struct('V5',V5,'W5',W5,'D0',D0,'I2',I2,'I3',I3,'PI2',PI2);
 
 axisdim = face_box(1); sgn = face_box(2);
@@ -98,9 +99,11 @@ results = repmat(struct('ok',true,'infS',inf,'reason','skip','lam1',[],'lam2',[]
                         'S_interval',[],'L_interval',[],'E_B',0,'nu_window',[], ...
                         'S_padding',0,'S_core_hessian',[], ...
                         'root_identity_used',false,'algorithm1_infS',-inf, ...
-                        'root_identity_gain',0), m, 1);
+                        'root_identity_gain',0,'veigs_verified',true, ...
+                        'veigs_lambda1',[],'veigs_indices',[]), m, 1);
 for k = t_levels(:)'
     results(k).ok = false; results(k).infS = -inf; results(k).reason = '';
+    results(k).veigs_verified = false;
     t = interval_hull(radial_edges(k), radial_edges(k+1));
     % ---------- Algorithm 1 Steps 1-3: interval blocks and Schur data ----
     [d1_over_t_I, d2_I, d0_I, S_core_I, schur] = algorithm1_scalars(CKI, CMI, CbI, EK, EM, Eb, qI, t, FR); % whole-box interval evaluation
@@ -171,6 +174,7 @@ for k = t_levels(:)'
     if ~(inf(F_at_nu_minus(1,1)) > 0 && inf(det2(F_at_nu_minus)) > 0), results(k).reason = 'W3'; continue; end
     if ~(sup(F_at_nu_plus(1,1)) < 0 && inf(det2(F_at_nu_plus)) > 0), results(k).reason = 'W4'; continue; end
     Mte = M0 + t*schur.DtM;                   % M(te), Eqs. (3), (57), positive-definite check
+    Kte = K0 + t*schur.DtK;                   % K(te), from the same Taylor quotient
     gersh = true;
     for i = 1:5
         jj = [1:i-1, i+1:5];
@@ -238,6 +242,25 @@ for k = t_levels(:)'
     end
     lam1 = PI2 + t*nu1_interval;              % refined λ₁(te), Eq. (5)
     lam2 = PI2 + t*nu2_interval;              % refined λ₂(te), Eq. (5)
+    % Independently certify the index-1 eigenvalue of the complete 5x5
+    % interval pencil with veigs.  The DQ2 Schur analysis remains necessary
+    % for the double cluster and S(t,e), but acceptance also requires this
+    % index-aware enclosure.
+    try
+        [veigs_lam1,veigs_info]=qn_veigs_smallest(Kte,Mte);
+    catch ME
+        if startsWith(ME.identifier,'qn:VEIGS')
+            results(k).reason=ME.identifier; continue;
+        end
+        rethrow(ME);
+    end
+    lam1=intersect(lam1,veigs_lam1);
+    if isnan(inf(lam1)) || isnan(sup(lam1))
+        results(k).reason='veigs_intersection'; continue;
+    end
+    results(k).veigs_verified=true;
+    results(k).veigs_lambda1=[inf(veigs_lam1),sup(veigs_lam1)];
+    results(k).veigs_indices=veigs_info.indices;
     results(k).infS = inf(S_B);
     results(k).lam1 = [inf(lam1), sup(lam1)];
     results(k).lam2 = [inf(lam2), sup(lam2)];
@@ -250,7 +273,7 @@ for k = t_levels(:)'
     results(k).root_identity_used = root_identity_used;
     results(k).algorithm1_infS = inf(S_B_algorithm1);
     results(k).root_identity_gain = inf(S_B) - inf(S_B_algorithm1);
-    if inf(S_B) > 0 && inf(lam1) > 0
+    if results(k).veigs_verified && inf(S_B) > 0 && inf(lam1) > 0
         results(k).ok = true;
     else
         results(k).reason = 'S';
@@ -337,7 +360,7 @@ d0 = -(sqr2g(al)+sqr2g(be)) + t*(al*(G(2,2)-G(1,1)) - 2*be*G(1,2)) ...
 PI4 = sqr(FR.PI2);
 S_core = -(PI2*d1_over_t + 2*d0)/d2 + 2*q*(PI4 + sqr(t)*(PI2*d1_over_t + d0)/d2); % S_B core, Eq. (67)
 if nargout > 4
-    schur = struct('X0',X0,'al',al,'be',be,'Xt',Xt,'DtM',DtM,'Y',I2+t*Yd, ...
+    schur = struct('X0',X0,'al',al,'be',be,'Xt',Xt,'DtK',DtK,'DtM',DtM,'Y',I2+t*Yd, ...
                    'Nm',Nm,'MW',MW,'C0',C0,'B0',B0,'B0i',B0i,'Bbar',I2+t*CBm, ...
                    'Z0',Z0,'G',G);
 end

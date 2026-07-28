@@ -3,21 +3,28 @@ classdef QuadrilateralProofRunner < handle
     properties (SetAccess=private)
         Root
         IntlabRoot
+        VeigsRoot
     end
     methods
-        function self=QuadrilateralProofRunner(intlabRoot)
+        function self=QuadrilateralProofRunner(intlabRoot,veigsRoot)
             self.Root=fileparts(mfilename('fullpath'));
             if nargin<1, intlabRoot=''; end
+            if nargin<2, veigsRoot=''; end
             self.IntlabRoot=intlabRoot;
+            self.VeigsRoot=veigsRoot;
         end
         function setup(self)
             if ~isempty(self.IntlabRoot), addpath(genpath(self.IntlabRoot)); end
+            if ~isempty(self.VeigsRoot), addpath(self.VeigsRoot); end
+            addpath(fullfile(self.Root,'src','common'));
             addpath(fullfile(self.Root,'src','local'));
             addpath(fullfile(self.Root,'src','global'));
             addpath(fullfile(self.Root,'tests'));
             if exist('startintlab','file')==2, startintlab; end
             assert(exist('intval','class')==8 || exist('intval','file')==2, ...
                 'INTLAB is not available. Pass its root to QuadrilateralProofRunner.');
+            assert(exist('veigs','file')==2 && exist('veig','file')==2, ...
+                'veigs is not available. Pass its root to QuadrilateralProofRunner.');
         end
         function summary=summarizeLocal(self,resultsDir)
             if nargin<2, resultsDir=fullfile(self.Root,'results','local'); end

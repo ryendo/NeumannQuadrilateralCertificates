@@ -2,6 +2,7 @@ function report = qn_smoke_test(repo_root)
 % Quick integration check; requires MATLAB and INTLAB but no full recomputation.
 
 if nargin<1, repo_root=fileparts(fileparts(mfilename('fullpath'))); end
+addpath(fullfile(repo_root,'src','common'));
 addpath(fullfile(repo_root,'src','local')); addpath(fullfile(repo_root,'src','global'));
 C=qn_global_constants();
 assert(in(3232/(27*pi^6),C.rho_local));
@@ -17,6 +18,8 @@ center=[0.10;0.05;0.04;0.02]; hw=0.01*ones(4,1);
 containsK=all(all(in(Kf,K))); containsM=all(all(in(Mf,M))); containsArea=in(af,area);
 assert(containsK && containsM && containsArea,'Certified enclosure misses its center value.');
 [verdict,info,gap,sdim]=qn_certify_box(center,hw);
+assert(strcmp(verdict,'cert') && strcmp(info.route,'veigs') && ...
+    any(info.index_range==1),'Representative box was not certified by veigs.');
 
 % A box crossing a genuine triangle face c_3=0 must be assemblable. The
 % physical-gradient stiffness formula has no division by J, even though the
@@ -35,6 +38,8 @@ assert(boundaryContains,'Triangle-boundary pencil enclosure misses its center va
 [boundaryVerdict,boundaryInfo]=qn_certify_box(boundaryCenter,boundaryHw);
 assert(strcmp(boundaryVerdict,'cert'), ...
     'Representative triangle-boundary box was not certified.');
+assert(strcmp(boundaryInfo.route,'veigs') && any(boundaryInfo.index_range==1), ...
+    'Triangle-boundary box was not certified by veigs with index 1.');
 
 local=qn_summarize_local_results(fullfile(repo_root,'results','local'));
 assert(local.verified,'Saved local certificate is incomplete.');

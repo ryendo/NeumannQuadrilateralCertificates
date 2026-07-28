@@ -79,7 +79,8 @@ if isempty(parent_data)
     child_parent_data = struct( ...
         'REM', child_remainder_bounds, ...
         'S_padding', [res.S_padding], ...
-        'S_core_hessian', {{res.S_core_hessian}}); % interval data inherited by child boxes
+        'S_core_hessian', {{res.S_core_hessian}}, ...
+        'veigs_verified', all([res.veigs_verified])); % inherited interval data
     child_parent_data.S_core_hessian = {res.S_core_hessian};
     is_verified = true;
     for child_box = subdivide_face_box(face_box)'
@@ -99,6 +100,9 @@ if isempty(parent_data)
     end
 else
     % Cheap S-only re-test of the final sign condition S_B, Eq. (67).
+    assert(isfield(parent_data,'veigs_verified') && parent_data.veigs_verified, ...
+        'dq2:VEIGSInheritance', ...
+        'A sign-only child may reuse only a parent box already verified by veigs.');
     res = dq2_retest_sign_box(face_box, radial_grid, t_levels, parent_data);
     okv = [res.ok];
     lower_S = min([res(okv).infS]);

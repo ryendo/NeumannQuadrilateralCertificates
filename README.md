@@ -16,7 +16,8 @@ space on a fixed reference square and has two certified components:
    square; and
 2. a global adaptive box cover outside a smaller seam ball.
 
-Both components now use MATLAB and INTLAB. Python is not required.
+Both components use MATLAB, INTLAB, and the verified generalized-eigenvalue
+solver `veigs`. Python is not required.
 
 ## Certified statements
 
@@ -55,13 +56,15 @@ The saved result in `results/local/` has been checked as:
 | maximum subdivision depth | 2 |
 | wall time | 13.41 h on 48 workers |
 
-This saved run predates the 2026-07-16 rounding hardening.  The hardening keeps
+This saved run predates the 2026-07-16 rounding hardening and the mandatory
+`veigs` index-1 check. The hardening keeps
 the same mathematical algorithm but accumulates every Taylor-remainder cell
 bound and every Gershgorin row radius with outward-rounded INTLAB operations.
 It also records the coarse `eta/beta` bound separately from the exact
 root-identity refinement.  Until the scheduled full rerun finishes, the table
-above is retained as the historical run of record rather than a refreshed
-result of the hardened code.
+above is retained as historical reference data rather than a refreshed result
+of the hardened, `veigs`-checked code. A fresh complete local run is required
+before the table can be promoted to the current run of record.
 
 ### Global step
 
@@ -82,16 +85,19 @@ first nonzero Neumann eigenvalue. The local and global regions overlap on
 The source Python code called the seam `RHO_SHARP`; this repository uses the
 paper-aligned names `rho_local` and `rho_seam` to remove that ambiguity.
 
-> **Recalculation status.** No fresh full-cover result is checked in yet. The supplied Python
+> **Recalculation status.** No `veigs`-based full-cover result is checked in
+> yet. A complete pre-`veigs` MATLAB/INTLAB run exists on liulab, but its
+> per-box acceptance used the former one-/two-vector Rayleigh tests and is not
+> a run of record for the present code. The supplied Python
 > extract is not the run-of-record driver named in its own README: it omits
 > `eigbound_shrink.py`, the parent `quad_neumann_release/` tree, and
 > `GLOBAL_STEP_AUDIT.md`. A faithful run of the supplied `run_cover(n_init=3)`
 > reaches `qn:Jacobian` on boxes converging to the degenerate boundary of
 > `P_K`. The current MATLAB/INTLAB assembly removes that artificial obstruction
 > by using the exactly equivalent physical-gradient formula described below.
-> On liulab, the revised smoke test certifies a box crossing the triangle face
-> `c_3=0` by the 2-vector route with positive margin (approximately `1.3612`). A new full global run is
-> still required before the global certificate can be declared complete.
+> On liulab, the revised smoke test certifies representative interior and
+> triangle-boundary boxes using `veigs` with index 1. A new full global run is
+> required before the current global certificate can be declared complete.
 
 The reference global run reported 1,420 verified boxes, 337 discarded boxes,
 1,683 bisections, no unverified boxes, maximum depth 26, and positive certified
@@ -103,6 +109,8 @@ new run's output.
 
 - MATLAB R2023b or later (the local computation was tested with R2023b).
 - INTLAB 12. INTLAB is not bundled.
+- [`veigs`](https://github.com/yuuka-math/veigs), pinned to commit
+  `6556d39a0d9819bb172d232062b698aa76e420f6`. It is not bundled.
 - A POSIX shell only for the optional launch scripts.
 
 All non-integer proof constants and decimal bounds are parsed from strings,
@@ -117,6 +125,8 @@ decision is made from INTLAB interval endpoints.
 .
 ├── QuadrilateralProofRunner.m       unified entry point
 ├── src/
+│   ├── common/
+│   │   └── qn_veigs_smallest.m      verified index-1 eigensolver wrapper
 │   ├── local/                       DQ2 local certificate
 │   │   ├── dq2_run_certificate.m
 │   │   ├── dq2_algorithm1_box.m
@@ -148,10 +158,17 @@ decision is made from INTLAB interval endpoints.
 
 ## Setup and quick check
 
+Install the pinned `veigs` revision:
+
+```bash
+git clone https://github.com/yuuka-math/veigs.git /path/to/veigs
+git -C /path/to/veigs checkout 6556d39a0d9819bb172d232062b698aa76e420f6
+```
+
 In MATLAB:
 
 ```matlab
-r = QuadrilateralProofRunner('/path/to/Intlab_V12');
+r = QuadrilateralProofRunner('/path/to/Intlab_V12','/path/to/veigs');
 r.setup();
 report = r.smokeTest();
 ```
@@ -179,13 +196,14 @@ From a shell:
 
 ```bash
 export INTLAB_ROOT=/path/to/Intlab_V12
+export VEIGS_ROOT=/path/to/veigs
 ./scripts/run_smoke.sh
 ```
 
 ## Check the saved local result
 
 ```matlab
-r = QuadrilateralProofRunner('/path/to/Intlab_V12');
+r = QuadrilateralProofRunner('/path/to/Intlab_V12','/path/to/veigs');
 r.setup();
 summary = r.summarizeLocal();
 assert(summary.verified)
@@ -201,6 +219,7 @@ On one machine:
 
 ```bash
 export INTLAB_ROOT=/path/to/Intlab_V12
+export VEIGS_ROOT=/path/to/veigs
 ./scripts/run_local_workers.sh 16 12 results/local_new
 ```
 
@@ -208,6 +227,7 @@ On liulab, use separate INTLAB copies for independent MATLAB processes:
 
 ```bash
 export INTLAB_ROOT_PATTERN='/home/rendo/Code_Endo/Intlab_Group/Intlab_V12_no%d'
+export VEIGS_ROOT=/path/to/veigs
 ./scripts/run_local_workers.sh 48 12 results/local_new
 ```
 
@@ -221,6 +241,7 @@ r.summarizeLocal(fullfile(r.Root,'results','local_new'))
 
 ```bash
 export INTLAB_ROOT=/path/to/Intlab_V12
+export VEIGS_ROOT=/path/to/veigs
 ./scripts/run_global.sh
 ```
 
@@ -237,6 +258,7 @@ On liulab, split the independent root-box forests across INTLAB copies:
 
 ```bash
 export INTLAB_ROOT_PATTERN='/home/rendo/Code_Endo/Intlab_Group/Intlab_V12_no%d'
+export VEIGS_ROOT=/path/to/veigs
 ./scripts/run_global_workers.sh 10
 ```
 
@@ -252,15 +274,15 @@ representative from each `D_4` orbit, discards boxes proved to lie inside the
 local seam ball or outside `P_K`, and applies the following certified test:
 
 ```text
-Q(B) Lambda(V;B) < pi^2,
+Q(B) sup(lambda_1(B)) < pi^2,
 Q(B) = sup_B |Q_p|.
 ```
 
-The center spectral gap selects either the bottom eigenvector or the bottom
-two-dimensional frame. The 2-vector route uses the guarded closed form for the
-smaller generalized eigenvalue and the source algorithm's 90-direction
-Rayleigh sweep when the interval discriminant crosses zero. Failed boxes are
-bisected using the source slack-driven coordinate rule; `qn_interval_box`
+For every retained box, `veigs(K(B),M(B),1,'sa')` returns a rigorous interval
+for the generalized eigenvalue with index 1. A box is accepted only when the
+returned index data contains `1` and the upper endpoint proves
+`sup(Q(B))*sup(lambda_1(B)) < inf(pi^2)`. Floating center eigensolves are used
+only by the source slack-driven bisection heuristic. `qn_interval_box`
 outward-rounds each child without imposing a minimum box width.
 
 ### Boundary-regular stiffness assembly
@@ -306,6 +328,7 @@ These timing values are diagnostics, not proof inputs.
 | local single-box Algorithm 1 | `src/local/dq2_algorithm1_box.m` |
 | local cover and subdivision | `src/local/dq2_run_certificate.m` |
 | local Taylor remainder | `src/local/dq2_bound_taylor_remainder_vectorized.m` |
+| verified index-1 generalized eigenvalue | `src/common/qn_veigs_smallest.m` |
 | Proposition `p:box-bound` | `src/global/qn_certify_box.m` |
 | interval pencil `K(B),M(B)` | `src/global/qn_km_enclosure.m` |
 | GL truncation enclosure | `src/global/qn_gl_pad.m` |
@@ -316,7 +339,9 @@ These timing values are diagnostics, not proof inputs.
 
 - INTLAB outward rounding and the explicit Taylor/GL remainder bounds are
   soundness-critical.
-- A local box is accepted only when INTLAB proves `inf(S)>0`.
+- A local box is accepted only when INTLAB proves `inf(S)>0` and `veigs`
+  returns a certified enclosure whose index data contains eigenvalue 1. The
+  DQ2 and `veigs` enclosures for `lambda_1` are intersected.
 - Cellwise Taylor-remainder magnitudes and Gershgorin row radii are summed as
   intervals; floating-point endpoint sums are not used as certified bounds.
 - Vectorized kernels use only INTLAB operations for proof quantities. Their
@@ -325,13 +350,24 @@ These timing values are diagnostics, not proof inputs.
 - The coarse `eta/beta` lower bound and the exact root-identity improvement are
   both retained in the per-box result structure for audit.
 - A global box is accepted only when INTLAB proves positivity of the mass
-  matrix by interval LDL and `sup(Q(B)*Lambda(V;B)) < inf(pi^2)`.
+  matrix by interval LDL, `veigs` certifies index 1, and
+  `sup(Q(B))*sup(lambda_1(B)) < inf(pi^2)`.
 - The 20-by-20 GL quadrature is not treated as exact: every stiffness, raw
   mass, and mean entry, and every parameter derivative used in its mean-value
   enclosure, is widened by the Bernstein-ellipse truncation bound.
 - Center eigensolves and finite-difference sensitivities are non-certified,
-  but they only select a frame and split coordinate; the box theorem is valid
-  for any such choices.
+  but they only select the split coordinate and do not enter acceptance.
+
+## Third-party verified eigensolver
+
+**veigs**: Used for solving generalized matrix eigenvalue problems with
+rigorous error bounds with the information of indices.
+**Source:** [https://github.com/yuuka-math/veigs](https://github.com/yuuka-math/veigs)
+[2025/12/13]
+
+For reproducibility, this repository pins the source to commit
+`6556d39a0d9819bb172d232062b698aa76e420f6` rather than following a moving
+branch.
 
 See [docs/PROVENANCE.md](docs/PROVENANCE.md) for source commits, hashes, and the
 Arb-to-INTLAB porting record.

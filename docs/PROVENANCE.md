@@ -28,6 +28,29 @@ the local `quad_neumann_global` Python/Arb extract supplied with the paper on
 The reference layout was `ryendo/DirichletSimplicityClustered` at commit
 `9331995405ac7fdbcb97e2a9a3ab26c0c9f6bf2b` (2025-12-14).
 
+## Verified generalized eigensolver
+
+Both certificate paths use the MIT-licensed
+[`yuuka-math/veigs`](https://github.com/yuuka-math/veigs) package at commit
+`6556d39a0d9819bb172d232062b698aa76e420f6` (2025-12-15). The repository does
+not bundle the dependency; `VEIGS_ROOT` or the second
+`QuadrilateralProofRunner` constructor argument must point to that exact
+checkout.
+
+The wrapper `src/common/qn_veigs_smallest.m` symmetrizes the interval pencil
+by taking the componentwise hull with its transpose, calls
+`veigs(K,M,1,'sa')`, and rejects results whose returned index information does
+not contain index 1. In the local DQ2 path this enclosure is intersected with
+the Schur-complement enclosure for `lambda_1`; the DQ2 argument remains
+responsible for the double cluster and the sign of `S(t,e)`. In the global
+path the upper endpoint returned by `veigs` replaces the former one-/two-vector
+Rayleigh acceptance test.
+
+The historical local CSV files and the completed pre-`veigs` liulab global
+run were generated before this dependency became mandatory. They remain
+useful regression data but are not run-of-record outputs for the present
+source.
+
 ## Missing global run-of-record source
 
 The supplied `quad_neumann_global/README.md` attributes the paper's global
@@ -63,16 +86,16 @@ test, or subdivision algorithm. It removes the source representation's
 artificial pole at `c_i=J(corner)=0` and permits an entire-integrand GL
 remainder bound on triangle faces.
 
-The revised smoke test was run with MATLAB R2023b and INTLAB 12 on liulab. It
-enclosed the analytic square pencil, an interior pencil, and a parameter box
-crossing the genuine triangle face `c_3=0`. The boundary box was certified by
-the 2-vector Rayleigh route with positive certified margin (approximately
-`1.3612`).
+The boundary-regular smoke test encloses the analytic square pencil, an
+interior pencil, and a parameter box crossing the genuine triangle face
+`c_3=0`. In the current source the interior and boundary boxes must also be
+certified by `veigs` with returned index information containing `1`.
 
 Porting rules:
 
-- The global cover geometry, D4 representative rule, gap threshold, 1-vector
-  and 2-vector tests, and directional fallback are kept. The paper's stated
+- The global cover geometry, D4 representative rule, and directional
+  subdivision fallback are kept. The former 1-vector and 2-vector acceptance
+  tests are replaced by the verified index-1 upper bound from `veigs`. The paper's stated
   longest-side fallback is applied when the maximum-slack axis is already less
   than half the longest half-width; this restores the diameter-to-zero premise
   of the termination proof that the Python extract's bare `argmax(slack)` did
@@ -88,5 +111,5 @@ Porting rules:
   the mean-value form. The spatial rule uses order 20 because the
   source kernel itself notes that global/far boxes require order at least about
   20; its default call left the order at 12, whose non-vanishing truncation pad
-  cannot certify skewed interior points. Floating-point values choose frames
-  and split coordinates only.
+  cannot certify skewed interior points. Floating-point values choose the
+  split coordinate only.

@@ -10,6 +10,7 @@ if [[ -z "${INTLAB_ROOT:-}" && -z "${INTLAB_ROOT_PATTERN:-}" ]]; then
   echo "Set INTLAB_ROOT or INTLAB_ROOT_PATTERN." >&2
   exit 2
 fi
+: "${VEIGS_ROOT:?Set VEIGS_ROOT to the pinned veigs checkout.}"
 mkdir -p "${ROOT}/${OUTDIR}"
 for k in $(seq 1 "${WORKERS}"); do
   if [[ -n "${INTLAB_ROOT_PATTERN:-}" ]]; then
@@ -17,7 +18,7 @@ for k in $(seq 1 "${WORKERS}"); do
   else
     intlab_root="${INTLAB_ROOT}"
   fi
-  matlab -nodisplay -batch "maxNumCompThreads(1); addpath(genpath('${intlab_root}')); cd '${ROOT}'; startintlab; r=QuadrilateralProofRunner('${intlab_root}'); r.setup(); r.runLocalWorker(${k},${WORKERS},${FACE_SUBDIVISIONS},fullfile('${ROOT}','${OUTDIR}'))" \
+  matlab -nodisplay -batch "maxNumCompThreads(1); addpath(genpath('${intlab_root}')); cd '${ROOT}'; startintlab; r=QuadrilateralProofRunner('${intlab_root}','${VEIGS_ROOT}'); r.setup(); r.runLocalWorker(${k},${WORKERS},${FACE_SUBDIVISIONS},fullfile('${ROOT}','${OUTDIR}'))" \
     > "${ROOT}/${OUTDIR}/log_${k}.txt" 2>&1 &
   sleep 1
 done
