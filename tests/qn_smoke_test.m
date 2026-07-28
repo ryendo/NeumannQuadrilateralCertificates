@@ -2,8 +2,7 @@ function report = qn_smoke_test(repo_root)
 % Quick integration check; requires MATLAB and INTLAB but no full recomputation.
 
 if nargin<1, repo_root=fileparts(fileparts(mfilename('fullpath'))); end
-addpath(fullfile(repo_root,'src','common'));
-addpath(fullfile(repo_root,'src','local')); addpath(fullfile(repo_root,'src','global'));
+addpath(fullfile(repo_root,'src'));
 C=qn_global_constants();
 assert(in(3232/(27*pi^6),C.rho_local));
 [K0,M0,A0]=qn_km_enclosure(zeros(4,1),zeros(4,1));

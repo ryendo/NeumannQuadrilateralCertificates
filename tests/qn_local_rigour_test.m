@@ -3,8 +3,7 @@ function report = qn_local_rigour_test(repo_root)
 % Requires MATLAB and INTLAB; it does not run the full S^3 cover.
 
 if nargin<1, repo_root=fileparts(fileparts(mfilename('fullpath'))); end
-addpath(fullfile(repo_root,'src','common'));
-addpath(fullfile(repo_root,'src','local'));
+addpath(fullfile(repo_root,'src'));
 
 PI=intval('pi');
 rho=intval(3232)/(intval(27)*PI^6);

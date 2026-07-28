@@ -16,9 +16,7 @@ classdef QuadrilateralProofRunner < handle
         function setup(self)
             if ~isempty(self.IntlabRoot), addpath(self.IntlabRoot); end
             if ~isempty(self.VeigsRoot), addpath(self.VeigsRoot); end
-            addpath(fullfile(self.Root,'src','common'));
-            addpath(fullfile(self.Root,'src','local'));
-            addpath(fullfile(self.Root,'src','global'));
+            addpath(fullfile(self.Root,'src'));
             addpath(fullfile(self.Root,'tests'));
             if exist('startintlab','file')==2, startintlab; end
             assert(exist('intval','class')==8 || exist('intval','file')==2, ...

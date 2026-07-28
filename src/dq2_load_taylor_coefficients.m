@@ -13,8 +13,8 @@ function TC = dq2_load_taylor_coefficients()
 %   coefficient is trusted as exact after this point.
 persistent CACHE
 if ~isempty(CACHE), TC = CACHE; return; end
-repo_root = fileparts(fileparts(fileparts(mfilename('fullpath'))));
-S = load(fullfile(repo_root, 'data', 'local', 'taylor_coefficients.mat'));
+repo_root = fileparts(fileparts(mfilename('fullpath')));
+S = load(fullfile(repo_root, 'data', 'taylor_coefficients.mat'));
 PI = intval('pi');
 M = size(S.MEXP, 1);
 TC.MEXP = S.MEXP;

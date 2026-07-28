@@ -2,8 +2,7 @@ function report = qn_global_vectorization_test(repo_root)
 % Regression test for the vectorized certified global assembly.
 
 if nargin<1, repo_root=fileparts(fileparts(mfilename('fullpath'))); end
-addpath(fullfile(repo_root,'src','common'));
-addpath(fullfile(repo_root,'src','global'));
+addpath(fullfile(repo_root,'src'));
 
 centers={ ...
     zeros(4,1), ...

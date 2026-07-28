@@ -131,38 +131,16 @@ accept/reject proof decision is made from INTLAB interval endpoints.
 ```text
 .
 ├── QuadrilateralProofRunner.m       unified entry point
-├── src/
-│   ├── common/
-│   │   └── qn_veigs_smallest.m      verified index-1 eigensolver wrapper
-│   ├── local/                       DQ2 local certificate
-│   │   ├── dq2_run_certificate.m
-│   │   ├── dq2_algorithm1_box.m
-│   │   ├── dq2_algorithm1_scalars.m
-│   │   ├── dq2_evaluate_taylor_coefficients_vectorized.m
-│   │   ├── dq2_bound_taylor_remainder_vectorized.m
-│   │   └── qn_summarize_local_results.m
-│   └── global/                      adaptive global certificate
-│       ├── qn_run_global_cover.m
-│       ├── qn_certify_box.m
-│       ├── qn_km_enclosure.m
-│       ├── qn_assemble_interval_center.m
-│       ├── qn_assemble_interval_grad.m
-│       └── qn_gl_pad.m
-├── data/local/taylor_coefficients.mat
+├── src/                             all proof implementation
+│   ├── dq2_*.m                      DQ2 local certificate
+│   └── qn_*.m                       global/shared certificate code
+├── data/taylor_coefficients.mat
 ├── results/
 │   ├── local/                       saved 48-worker certified run
 │   └── global/                      output of a fresh global run
-├── tests/qn_smoke_test.m
-├── tests/qn_global_vectorization_test.m
-├── tests/dq2_vectorization_test.m
-├── tests/dq2_remainder_vectorization_test.m
-├── scripts/
-│   ├── matlab_runner.sh
-│   ├── run_local_workers.sh
-│   ├── run_global.sh
-│   ├── run_global_workers.sh
-│   └── run_smoke.sh
-└── docs/PROVENANCE.md
+├── tests/                           smoke and regression tests
+├── scripts/                         shell launchers
+└── PROVENANCE.md
 ```
 
 ## Setup and quick check
@@ -320,8 +298,8 @@ reference, but batches its 400 nodes in INTLAB arrays. Parameter derivatives
 are the explicit chain-rule formulas for `X`, `Y`, `J`, the five modes, and
 their physical gradients; no derivative is approximated by floating point.
 On a representative liulab box, the complete warm per-box test decreased from
-about 25.2 seconds to 0.24 seconds. The scalar implementation remains in the
-repository solely for interval-overlap regression tests.
+about 25.2 seconds to 0.24 seconds during development. The former scalar
+reference implementation has since been removed.
 
 The local code similarly evaluates the existing exact monomial coefficient
 table by exponent groups and batches the four Taylor-remainder integration
@@ -335,15 +313,15 @@ These timing values are diagnostics, not proof inputs.
 
 | paper item | implementation |
 |---|---|
-| local single-box Algorithm 1 | `src/local/dq2_algorithm1_box.m` |
-| local cover and subdivision | `src/local/dq2_run_certificate.m` |
-| local Taylor remainder | `src/local/dq2_bound_taylor_remainder_vectorized.m` |
-| verified index-1 generalized eigenvalue | `src/common/qn_veigs_smallest.m` |
-| Proposition `p:box-bound` | `src/global/qn_certify_box.m` |
-| interval pencil `K(B),M(B)` | `src/global/qn_km_enclosure.m` |
-| GL truncation enclosure | `src/global/qn_gl_pad.m` |
-| Theorem `t:box-cover-terminates` | `src/global/qn_run_global_cover.m` |
-| `P_K`, `P_C`, seam and `D_4` logic | `src/global/qn_*box*.m`, `qn_global_constants.m` |
+| local single-box Algorithm 1 | `src/dq2_algorithm1_box.m` |
+| local cover and subdivision | `src/dq2_run_certificate.m` |
+| local Taylor remainder | `src/dq2_bound_taylor_remainder_vectorized.m` |
+| verified index-1 generalized eigenvalue | `src/qn_veigs_smallest.m` |
+| Proposition `p:box-bound` | `src/qn_certify_box.m` |
+| interval pencil `K(B),M(B)` | `src/qn_km_enclosure.m` |
+| GL truncation enclosure | `src/qn_gl_pad.m` |
+| Theorem `t:box-cover-terminates` | `src/qn_run_global_cover.m` |
+| `P_K`, `P_C`, seam and `D_4` logic | `src/qn_*box*.m`, `src/qn_global_constants.m` |
 
 ## Trust boundary
 
@@ -368,7 +346,7 @@ These timing values are diagnostics, not proof inputs.
 - Center eigensolves and finite-difference sensitivities are non-certified,
   but they only select the split coordinate and do not enter acceptance.
 
-See [docs/PROVENANCE.md](docs/PROVENANCE.md) for source commits, hashes, and the
+See [PROVENANCE.md](PROVENANCE.md) for source commits, hashes, and the
 Arb-to-INTLAB porting record.
 
 ## Confidentiality

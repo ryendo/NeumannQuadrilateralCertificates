@@ -2,7 +2,7 @@ function report=dq2_remainder_vectorization_test(repo_root)
 % Check validity and subdivision monotonicity of Taylor-cell bounds.
 
 if nargin<1, repo_root=fileparts(fileparts(mfilename('fullpath'))); end
-addpath(fullfile(repo_root,'src','local'));
+addpath(fullfile(repo_root,'src'));
 PI=intval('pi'); rho=intval('3232')/(intval('27')*PI^6);
 x=[infsup(-0.01,0.01);infsup(-0.01,0.01);infsup(-0.01,0.01)];
 E=dq2_face_direction(x,1,1);

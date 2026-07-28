@@ -16,7 +16,7 @@ the paper's run-of-record driver. Its unsimplified `1/J` stiffness assembly
 reaches degenerate-boundary boxes with `reason = qn:Jacobian`; the current
 MATLAB/INTLAB code instead uses the algebraically equivalent, boundary-regular
 physical-gradient assembly. A fresh full run of this revised enclosure is
-still required. See `docs/PROVENANCE.md` before attempting a paper-count
+still required. See `PROVENANCE.md` before attempting a paper-count
 reproduction.
 
 The historical Python/Arb counts quoted in the main README are reference data,

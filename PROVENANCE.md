@@ -37,7 +37,7 @@ not bundle the dependency; `VEIGS_ROOT` or the second
 `QuadrilateralProofRunner` constructor argument must point to that exact
 checkout.
 
-The wrapper `src/common/qn_veigs_smallest.m` symmetrizes the interval pencil
+The wrapper `src/qn_veigs_smallest.m` symmetrizes the interval pencil
 by taking the componentwise hull with its transpose, calls
 `veigs(K,M,1,'sa')`, and rejects results whose returned index information does
 not contain index 1. In the local DQ2 path this enclosure is intersected with

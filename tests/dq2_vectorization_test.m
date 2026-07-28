@@ -2,7 +2,7 @@ function report=dq2_vectorization_test(repo_root)
 % Check that box evaluations contain their center evaluations.
 
 if nargin<1, repo_root=fileparts(fileparts(mfilename('fullpath'))); end
-addpath(fullfile(repo_root,'src','local'));
+addpath(fullfile(repo_root,'src'));
 TC=dq2_load_taylor_coefficients();
 xI=[infsup(-0.01,0.01);infsup(-0.01,0.01);infsup(-0.01,0.01)];
 
