@@ -13,7 +13,6 @@ C.lambda_min_H2 = intval('3232') / (intval('27') * PI^6);
 C.rho_local = C.lambda_min_H2;
 C.rho_seam = C.lambda_min_H2 / intval('2');
 C.ulp_pad = intval('1e-12');
-C.gap_threshold = 1.5; % non-certified frame-selection heuristic
 C.max_depth = 60;
 
 s = sqrt(C.T);

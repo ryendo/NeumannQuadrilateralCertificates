@@ -11,7 +11,6 @@ if [[ -z "${INTLAB_ROOT_PATTERN:-}" ]]; then
   echo "Set INTLAB_ROOT_PATTERN before launching this watcher." >&2
   exit 2
 fi
-: "${VEIGS_ROOT:?Set VEIGS_ROOT to the pinned veigs checkout.}"
 
 count_markers() {
   local directory="$1" pattern="$2"
@@ -35,6 +34,7 @@ while [[ "$(count_markers "$ROOT/$OUTDIR" 'done_*.txt')" -lt "$WORKERS" ]]; do
 done
 
 SUMMARY_INTLAB_ROOT="$(printf "$INTLAB_ROOT_PATTERN" 1)"
-matlab -nodisplay -batch "maxNumCompThreads(1); addpath(genpath('${SUMMARY_INTLAB_ROOT}')); startintlab; addpath('${ROOT}/src/local'); s=qn_summarize_local_results('${ROOT}/${OUTDIR}'); save('${ROOT}/${OUTDIR}/summary.mat','s'); disp(s);" \
+"${ROOT}/scripts/matlab_runner.sh" "${SUMMARY_INTLAB_ROOT}" \
+  "maxNumCompThreads(1); s=r.summarizeLocal('${ROOT}/${OUTDIR}'); save('${ROOT}/${OUTDIR}/summary.mat','s'); disp(s)" \
   > "$ROOT/$OUTDIR/summary.log" 2>&1
 echo "Local certificate and summary completed."

@@ -35,19 +35,11 @@ function [results, REM] = dq2_algorithm1_box(face_box, m, radial_grid, parent_re
 % parent_remainder_bounds: optional bounds inherited from a parent box
 % (valid for any sub-box). t_levels: optional subset of radial intervals.
 
-PI = intval('pi');
-PI2 = sqr(PI); PI4 = sqr(PI2);
+[FR,K0,M0] = dq2_fixed_reference();
+PI2 = FR.PI2; V5 = FR.V5;
 rho = 3232/(27*PI2*PI2*PI2);                  % rho# in Sec. 1
 tmax = intval(sup(rho))*intval('1.000000000001');
 TC = dq2_load_taylor_coefficients();
-SQ2 = sqrt(intval(2));
-V5 = intval(zeros(5,2)); V5(1,1) = SQ2; V5(2,2) = SQ2;          % E_0 basis, Eq. (18), interval constants
-W5 = intval(zeros(5,3)); W5(3,1) = intval(2); W5(4,2) = SQ2; W5(5,3) = SQ2; % E_perp basis, Eq. (18)
-D0 = intval(zeros(3)); D0(1,1) = PI2; D0(2,2) = 3*PI2; D0(3,3) = 3*PI2;    % D_perp, Eq. (22)
-I2 = intval(eye(2)); I3 = intval(eye(3));
-M0 = intval(diag([1/2,1/2,1/4,1/2,1/2]));
-K0 = intval(diag([PI2/2,PI2/2,PI2/2,2*PI2,2*PI2]));
-FR = struct('V5',V5,'W5',W5,'D0',D0,'I2',I2,'I3',I3,'PI2',PI2);
 
 axisdim = face_box(1); sgn = face_box(2);
 xI = intval(zeros(3,1));
@@ -63,11 +55,11 @@ else
 end
 
 % Direction enclosures for B = (E intersect S^3) x T, Eq. (42).
-EI = e_from_x(xI, axisdim, sgn);            % e-box E_j, evaluated as INTLAB intervals
+EI = dq2_face_direction(xI, axisdim, sgn);   % e-box E_j, evaluated as INTLAB intervals
 xhp = hessianinit(xc);
-EP = e_from_x(xhp, axisdim, sgn);           % e at center, evaluated as INTLAB Hessian variables
+EP = dq2_face_direction(xhp, axisdim, sgn);  % e at center, evaluated as INTLAB Hessian variables
 xhb = hessianinit(xI);
-EG = e_from_x(xhb, axisdim, sgn);           % e over E_j, Hessian enclosure for centered form
+EG = dq2_face_direction(xhb, axisdim, sgn);  % e over E_j, Hessian enclosure for centered form
 
 % Taylor-quotient remainder bounds implement Delta_t K and Delta_t M in
 % Eqs. (29)-(30), avoiding division by an interval containing t = 0.
@@ -104,13 +96,13 @@ results = repmat(struct('ok',true,'infS',inf,'reason','skip','lam1',[],'lam2',[]
 for k = t_levels(:)'
     results(k).ok = false; results(k).infS = -inf; results(k).reason = '';
     results(k).veigs_verified = false;
-    t = interval_hull(radial_edges(k), radial_edges(k+1));
+    t = dq2_interval_hull(radial_edges(k), radial_edges(k+1));
     % ---------- Algorithm 1 Steps 1-3: interval blocks and Schur data ----
-    [d1_over_t_I, d2_I, d0_I, S_core_I, schur] = algorithm1_scalars(CKI, CMI, CbI, EK, EM, Eb, qI, t, FR); % whole-box interval evaluation
+    [d1_over_t_I, d2_I, d0_I, S_core_I, schur] = dq2_algorithm1_scalars(CKI, CMI, CbI, EK, EM, Eb, qI, t, FR); % whole-box interval evaluation
     if isempty(schur), results(k).reason = 'B0inv'; continue; end
     % ---------- centered chains (hessian at center / over box) ----------
-    [d1_over_t_P, d2_P, d0_P, S_core_P] = algorithm1_scalars(CKP, CMP, CbP, EK, EM, Eb, qP, t, FR); % center Hessian object
-    [d1_over_t_G, d2_G, d0_G, S_core_G] = algorithm1_scalars(CKG, CMG, CbG, EK, EM, Eb, qG, t, FR); % box Hessian enclosure
+    [d1_over_t_P, d2_P, d0_P, S_core_P] = dq2_algorithm1_scalars(CKP, CMP, CbP, EK, EM, Eb, qP, t, FR); % center Hessian object
+    [d1_over_t_G, d2_G, d0_G, S_core_G] = dq2_algorithm1_scalars(CKG, CMG, CbG, EK, EM, Eb, qG, t, FR); % box Hessian enclosure
     if isempty(d1_over_t_P) || isempty(d1_over_t_G), results(k).reason = 'cinv'; continue; end
     dx = xI - xc;
     d1_over_t_B = intersect(centered_hessian_interval(d1_over_t_P, d1_over_t_G, dx), d1_over_t_I); % d̃₁, Eq. (60)
@@ -158,7 +150,7 @@ for k = t_levels(:)'
     Xfull = schur.X0 + t*schur.Xt;            % E_0 block of the exact Schur pencil, interval
     wedges = interval_edges(I_nu, nw);
     for w = 1:nw
-        Wj = interval_hull(wedges(w), wedges(w+1));
+        Wj = dq2_interval_hull(wedges(w), wedges(w+1));
         BWj = schur.B0 - (t*Wj)*schur.MW;     % A_t^{perp,perp}(nu), Eq. (57)
         if ~posdef3(BWj), ok = false; reason = 'W2'; break; end
         [BWji, okinv] = inv3(BWj);
@@ -282,17 +274,6 @@ end
 end
 
 % ---------- helpers ----------
-function E = e_from_x(x, axisdim, sgn)
-oth = setdiff(1:4, axisdim);
-nrm = sqrt(1 + x(1)^2 + x(2)^2 + x(3)^2);
-E = cell(4,1);
-E{axisdim} = sgn/nrm;
-for d = 1:3
-    E{oth(d)} = x(d)/nrm;
-end
-E = vertcat(E{:});
-end
-
 function c = centered_hessian_interval(cp, cb, dx)
 % Centered-form interval evaluation: value and gradient at the center point
 % plus Hessian enclosure over the box. Used for d_2, tilde_d_1, d_0, and S.
@@ -310,69 +291,6 @@ for i = 1:3
     end
 end
 c = c + qd/2;
-end
-
-function [d1_over_t, d2, d0, S_core, schur] = algorithm1_scalars(CK, CM, Cb, EK, EM, Eb, q, t, FR)
-% Vieta scalars and the assembled unpadded S_B for the comparison pencil;
-% class-generic (intval / hessian). schur (block data) for intval inputs.
-% d2, d1_over_t, d0 are d₂, d̃₁, d₀ in Algorithm 1, Steps 6 and 9-13:
-% det Fhat_t(nu) = d_2 nu^2 - d_1 nu + d_0, d_1 = t*tilde_d_1,
-% Eqs. (59)-(60). S_core is Eq. (67) before adding the root-error padding.
-PI2 = FR.PI2; V5 = FR.V5; W5 = FR.W5; D0 = FR.D0; I2 = FR.I2; I3 = FR.I3;
-J = 9;
-RK = CK{3}; RMv = CM{3}; Rb = Cb{3};          % K_2(e), M_2(e), b_2(e), symbolic coefficients
-tp = t;
-for j = 3:J
-    RK = RK + tp*CK{j+1}; RMv = RMv + tp*CM{j+1}; Rb = Rb + tp*Cb{j+1}; % Taylor quotient for Eqs. (29)-(30)
-    tp = tp*t;
-end
-% tp = t^8
-RK = RK + tp*EK; RMv = RMv + tp*EM; Rb = Rb + tp*Eb; % interval Taylor remainders R_K, R_M, R_b
-den = 1 - sqr(t)*q;                            % area factor |Q_te|, Eq. (9)
-wv = Cb{2} + t*Rb;
-RM = RMv - (wv*wv')/den;                      % Delta_t M(e), including rank-one correction
-Xt = V5'*(RK - PI2*RM)*V5;                    % E_0 block of second-order quotient
-DtM = CM{2} + t*RM; DtK = CK{2} + t*RK;       % Delta_t M(e), Delta_t K(e), Eqs. (29)-(30)
-Th = DtK - PI2*DtM;                           % Delta_t K(e) - pi^2 Delta_t M(e)
-Yd = V5'*DtM*V5;                              % E_0 block of Delta_t M(e)
-Nm = V5'*DtM*W5;                              % E_0/E_perp block of Delta_t M(e)
-MW = I3 + t*(W5'*DtM*W5);
-C0 = V5'*Th*W5;                               % C_t^{0 perp}(0), Eq. (32)
-B0 = D0 + t*(W5'*Th*W5);                       % A_t^{perp,perp}(0), Eqs. (34), (57)
-[B0i, okinv] = inv3(B0);
-if ~okinv
-    d1_over_t = []; d2 = []; d0 = []; S_core = []; schur = [];
-    return
-end
-Z0 = symm(C0*B0i*C0');                        % Schur correction in F_t, Eq. (39), interval 3x3 solve
-CB0 = C0*B0i;
-Zb1 = symm(-(Nm*B0i*C0' + C0*B0i*Nm') + CB0*MW*B0i*C0');
-X0 = V5'*(CK{2} - PI2*CM{2})*V5;              % first-order E_0 block at t=0
-al = (X0(1,1) - X0(2,2))/2;
-be = (X0(1,2) + X0(2,1))/2;
-G = Xt - Z0;                                  % constant part of Fhat_t
-CBm = Yd + t*Zb1;                             % coefficient of -nu in Fhat_t, Eq. (58)
-d2 = det2(I2 + t*CBm);                         % d₂ in Eq. (59)
-d1_over_t = (G(1,1)+G(2,2)) + al*(CBm(2,2)-CBm(1,1)) - 2*be*CBm(1,2) ...
-      + t*(G(1,1)*CBm(2,2) + G(2,2)*CBm(1,1) - 2*G(1,2)*CBm(1,2));
-d0 = -(sqr2g(al)+sqr2g(be)) + t*(al*(G(2,2)-G(1,1)) - 2*be*G(1,2)) ...
-     + sqr(t)*(G(1,1)*G(2,2) - sqr2g(G(1,2)));
-PI4 = sqr(FR.PI2);
-S_core = -(PI2*d1_over_t + 2*d0)/d2 + 2*q*(PI4 + sqr(t)*(PI2*d1_over_t + d0)/d2); % S_B core, Eq. (67)
-if nargout > 4
-    schur = struct('X0',X0,'al',al,'be',be,'Xt',Xt,'DtK',DtK,'DtM',DtM,'Y',I2+t*Yd, ...
-                   'Nm',Nm,'MW',MW,'C0',C0,'B0',B0,'B0i',B0i,'Bbar',I2+t*CBm, ...
-                   'Z0',Z0,'G',G);
-end
-end
-
-function y = sqr2g(x)
-% square that works for both intval (tight sqr) and gradient
-if isintval(x)
-    y = sqr(x);
-else
-    y = x*x;
-end
 end
 
 function S = symm(A)
@@ -412,12 +330,6 @@ d3 = A(1,1)*(A(2,2)*A(3,3)-A(2,3)*A(3,2)) ...
    - A(1,2)*(A(2,1)*A(3,3)-A(2,3)*A(3,1)) ...
    + A(1,3)*(A(2,1)*A(3,2)-A(2,2)*A(3,1));
 ok = inf(A(1,1)) > 0 && inf(m2) > 0 && inf(d3) > 0;
-end
-
-function X = interval_hull(a, b)
-% Hull of two scalar endpoints, accepting either double or intval inputs.
-ia = intval(a); ib = intval(b);
-X = infsup(inf(ia), sup(ib));
 end
 
 function edges = interval_edges(X, n)
@@ -490,7 +402,7 @@ function [kappa2, ok] = schur_residual_norm_bound(schur, t, I_nu, nw, nrmL1)
 wedges = interval_edges(I_nu, nw);
 kappa2 = 0; ok = true;
 for w = 1:nw
-    Wj = interval_hull(wedges(w), wedges(w+1));
+    Wj = dq2_interval_hull(wedges(w), wedges(w+1));
     BWj = schur.B0 - (t*Wj)*schur.MW;
     [BWji, okinv] = inv3(BWj);
     if ~okinv, ok = false; return; end

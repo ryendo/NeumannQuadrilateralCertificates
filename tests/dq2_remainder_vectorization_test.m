@@ -5,8 +5,7 @@ if nargin<1, repo_root=fileparts(fileparts(mfilename('fullpath'))); end
 addpath(fullfile(repo_root,'src','local'));
 PI=intval('pi'); rho=intval('3232')/(intval('27')*PI^6);
 x=[infsup(-0.01,0.01);infsup(-0.01,0.01);infsup(-0.01,0.01)];
-nrm=sqrt(intval('1')+x(1)^2+x(2)^2+x(3)^2);
-E=[intval('1')/nrm;x(1)/nrm;x(2)/nrm;x(3)/nrm];
+E=dq2_face_direction(x,1,1);
 
 t=tic; [Ko,Mo,bo]=dq2_bound_taylor_remainder(E,rho,2,10); oldSeconds=toc(t);
 t=tic; [Kn,Mn,bn]=dq2_bound_taylor_remainder_vectorized(E,rho,2,10); newSeconds=toc(t);

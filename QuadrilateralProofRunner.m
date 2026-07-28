@@ -14,7 +14,7 @@ classdef QuadrilateralProofRunner < handle
             self.VeigsRoot=veigsRoot;
         end
         function setup(self)
-            if ~isempty(self.IntlabRoot), addpath(genpath(self.IntlabRoot)); end
+            if ~isempty(self.IntlabRoot), addpath(self.IntlabRoot); end
             if ~isempty(self.VeigsRoot), addpath(self.VeigsRoot); end
             addpath(fullfile(self.Root,'src','common'));
             addpath(fullfile(self.Root,'src','local'));

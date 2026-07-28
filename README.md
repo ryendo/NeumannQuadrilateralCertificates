@@ -125,9 +125,8 @@ computation:
 
 All non-integer proof constants and decimal bounds are parsed from strings,
 for example `intval('0.5')`, `intval('pi')`, and `intval('1e-12')`. Floating
-point is used only for choices that are mathematically valid for any choice:
-the center test frame and the bisection heuristic. Every accept/reject proof
-decision is made from INTLAB interval endpoints.
+point is used only for the non-certified bisection heuristic. Every
+accept/reject proof decision is made from INTLAB interval endpoints.
 
 ## Project structure
 
@@ -140,6 +139,7 @@ decision is made from INTLAB interval endpoints.
 │   ├── local/                       DQ2 local certificate
 │   │   ├── dq2_run_certificate.m
 │   │   ├── dq2_algorithm1_box.m
+│   │   ├── dq2_algorithm1_scalars.m
 │   │   ├── dq2_evaluate_taylor_coefficients_vectorized.m
 │   │   ├── dq2_bound_taylor_remainder_vectorized.m
 │   │   └── qn_summarize_local_results.m
@@ -159,6 +159,7 @@ decision is made from INTLAB interval endpoints.
 ├── tests/dq2_vectorization_test.m
 ├── tests/dq2_remainder_vectorization_test.m
 ├── scripts/
+│   ├── matlab_runner.sh
 │   ├── run_local_workers.sh
 │   ├── run_global.sh
 │   ├── run_global_workers.sh

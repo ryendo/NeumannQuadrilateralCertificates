@@ -6,17 +6,17 @@ addpath(fullfile(repo_root,'src','local'));
 TC=dq2_load_taylor_coefficients();
 xI=[infsup(-0.01,0.01);infsup(-0.01,0.01);infsup(-0.01,0.01)];
 
-EI=e_from_x(xI);
+EI=dq2_face_direction(xI,1,1);
 t=tic; oldI=eval_old(TC,EI); oldIntervalSeconds=toc(t);
 t=tic; newI=eval_new(TC,EI); newIntervalSeconds=toc(t);
 compare_interval_families(oldI,newI);
 
-EP=e_from_x(hessianinit(intval(mid(xI))));
+EP=dq2_face_direction(hessianinit(intval(mid(xI))),1,1);
 t=tic; oldP=eval_old(TC,EP); oldPointHessianSeconds=toc(t);
 t=tic; newP=eval_new(TC,EP); newPointHessianSeconds=toc(t);
 compare_hessian_families(oldP,newP);
 
-EG=e_from_x(hessianinit(xI));
+EG=dq2_face_direction(hessianinit(xI),1,1);
 t=tic; oldG=eval_old(TC,EG); oldBoxHessianSeconds=toc(t);
 t=tic; newG=eval_new(TC,EG); newBoxHessianSeconds=toc(t);
 compare_hessian_families(oldG,newG);
@@ -27,11 +27,6 @@ report=struct('all_interval_overlaps',true,'old_seconds',oldTotal, ...
     'new_seconds',newTotal,'speedup',oldTotal/newTotal);
 fprintf('LOCAL VECTORIZATION OK: %.3fx (%.3fs -> %.3fs)\n', ...
     report.speedup,oldTotal,newTotal);
-end
-
-function E=e_from_x(x)
-nrm=sqrt(1+x(1)^2+x(2)^2+x(3)^2);
-E=[1/nrm;x(1)/nrm;x(2)/nrm;x(3)/nrm];
 end
 
 function out=eval_old(TC,E)

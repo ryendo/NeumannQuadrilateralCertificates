@@ -18,9 +18,8 @@ fields={'verified','discarded','bisected','unverified','two_vector', ...
     'veigs_certified','initial_retained'};
 result=struct();
 for f=1:numel(fields)
-    name=fields{f}; total=0;
-    for k=1:worker_count, total=total+items{k}.(name); end
-    result.(name)=total;
+    name=fields{f};
+    result.(name)=sum(cellfun(@(item)item.(name),items));
 end
 result.max_depth=max(cellfun(@(x)x.max_depth,items));
 margins=inf(worker_count,1);
@@ -45,7 +44,7 @@ all_workers_complete=all(cellfun(@(x)logical(x.complete),items));
 result.complete=all_workers_complete && result.unverified==0 && ...
     result.initial_retained==result.initial_retained_all && isfinite(result.min_certified_margin);
 fid=fopen(output_file,'w'); assert(fid>=0,'Cannot open merged output file.');
-cleanup=onCleanup(@() fclose(fid)); %#ok<NASGU>
+cleanup=onCleanup(@() fclose(fid));
 fprintf(fid,'%s\n',jsonencode(result,'PrettyPrint',true));
 fprintf(['MERGED global verified=%d discarded=%d bisected=%d unverified=%d ' ...
     'max_depth=%d min_margin=%.17g complete=%d\n'],result.verified,result.discarded, ...
