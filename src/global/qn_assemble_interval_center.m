@@ -1,8 +1,8 @@
 function [K,Mraw,means] = qn_assemble_interval_center(p)
 % Vectorized certified assembly at a point interval in parameter space.
 %
-% This is algebraically identical to qn_assemble_ad for intval inputs.  The
-% exactly cancelled physical-gradient form remains regular on triangle faces.
+% The exactly cancelled physical-gradient form remains regular on triangle
+% faces.
 
 [U,V,W]=qn_gl_tensor20();
 PI=intval('pi'); half=intval('0.5'); two=intval('2'); one=intval('1');

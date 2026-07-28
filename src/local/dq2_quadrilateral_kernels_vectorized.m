@@ -1,5 +1,5 @@
 function out=dq2_quadrilateral_kernels_vectorized(u,v,aa,bb,cc,dd,PI)
-% Vectorized form of dq2_quadrilateral_kernels for Taylor remainder cells.
+% Certified quadrilateral kernels for vectorized Taylor-remainder cells.
 %
 % u and v are equally sized intval arrays.  Parameters may be INTLAB Taylor
 % objects.  Elementwise operators evaluate the same exact integrands on all

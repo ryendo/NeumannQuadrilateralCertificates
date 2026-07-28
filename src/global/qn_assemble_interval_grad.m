@@ -1,10 +1,8 @@
 function [K,Mraw,means] = qn_assemble_interval_grad(p)
 % Vectorized exact first-parameter derivatives over an interval box.
 %
-% Each returned entry has fields v and g, matching qn_assemble_jet1.  The
-% derivatives below are the symbolic chain-rule expansion of that reference
-% implementation; only their evaluation order is changed.  All numerical
-% evaluation remains in INTLAB interval arithmetic.
+% Each returned entry has fields v and g.  The derivatives below are an exact
+% symbolic chain-rule expansion evaluated with INTLAB interval arithmetic.
 
 [U,V,W]=qn_gl_tensor20();
 PI=intval('pi'); half=intval('0.5'); two=intval('2'); one=intval('1');

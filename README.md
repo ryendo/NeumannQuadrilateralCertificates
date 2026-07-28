@@ -197,9 +197,10 @@ local_fast = dq2_vectorization_test(r.Root);
 remainder_fast = dq2_remainder_vectorization_test(r.Root);
 ```
 
-The vectorization regressions retain the former scalar INTLAB kernels as
-independent references. They compare every stiffness, raw-mass, mean, gradient,
-and local Hessian interval, and exercise a global box crossing `c_3=0`.
+The vectorization regressions check that box evaluations contain their center
+values and center Hessians, that Taylor-cell subdivision does not enlarge the
+remainder bounds, and that the global assembly certifies a box crossing
+`c_3=0`.
 
 From a shell:
 
