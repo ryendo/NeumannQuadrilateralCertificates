@@ -105,13 +105,23 @@ slack. A fresh MATLAB/INTLAB run writes its own record to
 `results/global/summary.json`; do not substitute the reference counts for a
 new run's output.
 
-## Requirements
+## Core Libraries & Dependencies
 
-- MATLAB R2023b or later (the local computation was tested with R2023b).
-- INTLAB 12. INTLAB is not bundled.
-- [`veigs`](https://github.com/yuuka-math/veigs), pinned to commit
-  `6556d39a0d9819bb172d232062b698aa76e420f6`. It is not bundled.
-- A POSIX shell only for the optional launch scripts.
+This project relies on specialized libraries for verified numerical
+computation:
+
+1. **MATLAB** R2023b or later (the local computation was tested with R2023b).
+2. **INTLAB**: The fundamental toolbox for rigorous interval arithmetic in
+   MATLAB. INTLAB is not bundled.
+   * **Source:** [http://www.tuhh.de/ti3/intlab/](http://www.tuhh.de/ti3/intlab/)
+     [INTLAB V12 was used for the computation.]
+3. **veigs**: Used for solving generalized matrix eigenvalue problems with
+   rigorous error bounds with the information of indices. `veigs` is not
+   bundled.
+   * **Source:** [https://github.com/yuuka-math/veigs](https://github.com/yuuka-math/veigs)
+     [2025/12/13]
+   * **Pinned revision:** `6556d39a0d9819bb172d232062b698aa76e420f6`
+4. A POSIX shell, required only for the optional launch scripts.
 
 All non-integer proof constants and decimal bounds are parsed from strings,
 for example `intval('0.5')`, `intval('pi')`, and `intval('1e-12')`. Floating
@@ -357,17 +367,6 @@ These timing values are diagnostics, not proof inputs.
   enclosure, is widened by the Bernstein-ellipse truncation bound.
 - Center eigensolves and finite-difference sensitivities are non-certified,
   but they only select the split coordinate and do not enter acceptance.
-
-## Third-party verified eigensolver
-
-**veigs**: Used for solving generalized matrix eigenvalue problems with
-rigorous error bounds with the information of indices.
-**Source:** [https://github.com/yuuka-math/veigs](https://github.com/yuuka-math/veigs)
-[2025/12/13]
-
-For reproducibility, this repository pins the source to commit
-`6556d39a0d9819bb172d232062b698aa76e420f6` rather than following a moving
-branch.
 
 See [docs/PROVENANCE.md](docs/PROVENANCE.md) for source commits, hashes, and the
 Arb-to-INTLAB porting record.
