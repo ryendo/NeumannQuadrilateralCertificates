@@ -1,6 +1,10 @@
-function [epsK, epsM, info] = qn_gl_pad(p,N)
+function [epsK, epsM, info, epsGradK, epsGradM] = qn_gl_pad(p,N)
 % Certified Bernstein-ellipse pad for the spatial tensor GL rule.
-% Mechanical INTLAB translation of _kernel/gl_pad_v2.py (value slot).
+%
+% After exact metric cancellation, both K and M integrands are entire in the
+% reference variables: K has the form (q_i'*q_j)*J and M has the form
+% phi_i*phi_j*J.  Consequently the pad uses an entire-function ellipse and
+% has no Jacobian lower bound or pole-distance assumption.
 
 if nargin<2, N=20; end
 PI = intval('pi'); twoPI = intval('2')*PI;
@@ -12,58 +16,49 @@ Xv_ub = intval(D) + intval(B);
 Yu_ub = intval(D) + intval(C);
 freq_u = twoPI*(Xu_ub+Yu_ub);
 freq_v = twoPI*(Xv_ub+Yv_ub);
-g_ub = max((Xu_ub+Yu_ub)^2, (Xv_ub+Yv_ub)^2);
-kcoef = twoPI^2*g_ub;
-Jhi = Xu_ub*Yv_ub + Xv_ub*Yu_ub;
-
-half = intval('0.5');
-J00 = jac(-half,-half,p); J10 = jac(half,-half,p);
-J01 = jac(-half,half,p);  J11 = jac(half,half,p);
-minJ = intval(min([inf(J00),inf(J10),inf(J01),inf(J11)]));
-if inf(minJ) <= 0, error('qn:Jacobian','Jacobian is not certifiably positive.'); end
-dJdu = intval(sup(abs(J10-J00)));
-dJdv = intval(sup(abs(J01-J00)));
-
-euK = one_direction(freq_u,dJdu,minJ,kcoef,Jhi,true,N);
-evK = one_direction(freq_v,dJdv,minJ,kcoef,Jhi,true,N);
-euM = one_direction(freq_u,dJdu,minJ,kcoef,Jhi,false,N);
-evM = one_direction(freq_v,dJdv,minJ,kcoef,Jhi,false,N);
+[euK,eguK,euM,eguM] = one_direction(freq_u,A,B,C,D,N);
+[evK,egvK,evM,egvM] = one_direction(freq_v,A,B,C,D,N);
 epsK = intval('2')*(euK+evK);
 epsM = intval('2')*(euM+evM);
-info = struct('minJ',minJ,'freq_u',freq_u,'freq_v',freq_v, ...
-    'epsK',epsK,'epsM',epsM);
+epsGradK = intval('2')*(eguK+egvK);
+epsGradM = intval('2')*(eguM+egvM);
+info = struct('representation','physical_gradient_entire', ...
+    'freq_u',freq_u,'freq_v',freq_v, ...
+    'epsK',epsK,'epsM',epsM, ...
+    'epsGradK',epsGradK,'epsGradM',epsGradM);
 end
 
-function e = one_direction(freq,dJ,minJ,kcoef,Jhi,isK,N)
-one = intval('1'); cap = intval('1.5');
-if sup(dJ) <= sup(intval('1e-9')*minJ)
-    xstar = intval('1e6');
-else
-    xstar = one + intval('2')*minJ/dJ;
-end
-if inf(xstar) <= 1, error('qn:GLPole','GL pole reach is not greater than one.'); end
-a = one + (xstar-one)/intval('2');
-a = min(a,cap);
+function [eK,egK,eM,egM] = one_direction(freq,A,B,C,D,N)
+one = intval('1'); a = intval('1.5');
+% A fixed ellipse is deliberately used: any a>1 is valid for these entire
+% integrands, and a point interval avoids a parameter-dependent ellipse.
 b = sqrt(a^2-one); rho = a+b;
-if isK
-    poly = kcoef*(one+a+a^2+a^3+a^4);
-    num = cosh(freq*b)*poly;
-    Jell = minJ-dJ*a;
-    if inf(Jell) <= 0, Jell = minJ/intval('2'); end
-    Mrho = num/Jell;
-else
-    poly = Jhi*(one+a);
-    Mrho = cosh(freq*b)*poly;
-end
-Cgl = intval('64')/intval('15');
-e = Cgl*Mrho/(rho^(2*N))/(one-one/rho^2);
-end
 
-function J = jac(u,v,p)
-a=p(1); b=p(2); c=p(3); d=p(4);
-Xu=intval('1')-a-intval('2')*b*v;
-Xv=-(d+intval('2')*b*u);
-Yu=-(d-intval('2')*c*v);
-Yv=intval('1')+a+intval('2')*c*u;
-J=Xu*Yv-Xv*Yu;
+% On the ellipse in one reference coordinate, use |u|,|v| <= a/2 for a
+% symmetric conservative bound.  J is affine in u,v.  The four formulas
+% below bound all parameter derivatives of J on the same ellipse.
+shape = a^2/intval('2');
+Jell = one+A^2+D^2 + a*((B+C)*(one+A)+B*D+C*D);
+dJa = intval('2')*A+a*(B+C);
+dJb = a*(one+A+D);
+dJc = dJb;
+dJd = intval('2')*D+a*(B+C);
+dJ = max(max(dJa,dJb),max(dJc,dJd));
+
+% |q_i'*q_j| <= 8*pi^2 times the combined trig envelope.  A parameter
+% derivative of that product is bounded by 64*pi^3*shape; the constants
+% cover both physical components and both differentiated factors.
+coefK = intval('8')*intval('pi')^2*Jell;
+coefgK = intval('64')*intval('pi')^3*shape*Jell ...
+    + intval('8')*intval('pi')^2*dJ;
+% The same bound covers raw mass entries and single-mode means.
+coefM = Jell;
+coefgM = intval('4')*intval('pi')*shape*Jell+dJ;
+trigEnvelope=cosh(freq*b);
+Cgl = intval('64')/intval('15');
+factor=Cgl/(rho^(2*N))/(one-one/rho^2);
+eK=factor*trigEnvelope*coefK;
+egK=factor*trigEnvelope*coefgK;
+eM=factor*trigEnvelope*coefM;
+egM=factor*trigEnvelope*coefgM;
 end

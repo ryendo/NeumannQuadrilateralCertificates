@@ -1,42 +1,40 @@
 function [K, M, area] = qn_km_float(p)
 % Non-certified center assembly. Used only to choose a test frame and split axis.
+% Use the same exactly cancelled physical-gradient stiffness form as the
+% certified assembly, so center evaluation is also defined on triangle faces.
 
-[xi, wi] = qn_gauss_legendre_20();
-x = mid(xi); w = mid(wi);
+persistent U V W
+if isempty(U)
+    [xi,wi]=qn_gauss_legendre_20(); x=mid(xi); w=mid(wi);
+    Ug=repmat(x,1,20); Vg=repmat(x.',20,1);
+    Wg=repmat(w,1,20).*repmat(w.',20,1);
+    U=Ug(:); V=Vg(:); W=Wg(:);
+end
 modes = [1 0; 0 1; 1 1; 2 0; 0 2];
-K = zeros(5); Mraw = zeros(5); means = zeros(5,1);
-area = 0;
 a = p(1); b = p(2); c = p(3); d = p(4);
-for iu = 1:20
-    u = x(iu);
-    for iv = 1:20
-        v = x(iv); W = w(iu)*w(iv);
-        X = u - a*u - d*v - 2*b*u*v;
-        Y = v - d*u + a*v + 2*c*u*v;
-        Xu = 1-a-2*b*v; Xv = -(d+2*b*u);
-        Yu = -(d-2*c*v); Yv = 1+a+2*c*u;
-        J = Xu*Yv-Xv*Yu;
-        gvv = Xv^2+Yv^2; guv = Xu*Xv+Yu*Yv; guu = Xu^2+Yu^2;
-        area = area + J*W;
-        phi = zeros(5,1); phiu = zeros(5,1); phiv = zeros(5,1);
-        for q = 1:5
-            mm = modes(q,1); nn = modes(q,2);
-            cx = cos(mm*pi*(X+0.5)); sx = sin(mm*pi*(X+0.5));
-            cy = cos(nn*pi*(Y+0.5)); sy = sin(nn*pi*(Y+0.5));
-            phi(q) = cx*cy;
-            psiX = -mm*pi*sx*cy; psiY = -nn*pi*cx*sy;
-            phiu(q) = psiX*Xu + psiY*Yu;
-            phiv(q) = psiX*Xv + psiY*Yv;
-        end
-        means = means + phi*J*W;
-        for i = 1:5
-            for j = i:5
-                K(i,j) = K(i,j) + (gvv*phiu(i)*phiu(j) ...
-                    - guv*(phiu(i)*phiv(j)+phiv(i)*phiu(j)) ...
-                    + guu*phiv(i)*phiv(j))/J*W;
-                Mraw(i,j) = Mraw(i,j) + phi(i)*phi(j)*J*W;
-            end
-        end
+UV=U.*V;
+X=U-a.*U-d.*V-2*b.*UV;
+Y=V-d.*U+a.*V+2*c.*UV;
+Xu=1-a-2*b.*V; Xv=-(d+2*b.*U);
+Yu=-(d-2*c.*V); Yv=1+a+2*c.*U;
+J=Xu.*Yv-Xv.*Yu; JW=J.*W; area=sum(JW);
+
+Phi=zeros(400,5); PsiX=zeros(400,5); PsiY=zeros(400,5);
+for q=1:5
+    mm=modes(q,1); nn=modes(q,2);
+    cx=cos(mm*pi*(X+0.5)); sx=sin(mm*pi*(X+0.5));
+    cy=cos(nn*pi*(Y+0.5)); sy=sin(nn*pi*(Y+0.5));
+    Phi(:,q)=cx.*cy;
+    PsiX(:,q)=-mm*pi.*sx.*cy;
+    PsiY(:,q)=-nn*pi.*cx.*sy;
+end
+
+K=zeros(5); Mraw=zeros(5); means=zeros(5,1);
+for i=1:5
+    means(i)=sum(Phi(:,i).*JW);
+    for j=i:5
+        K(i,j)=sum((PsiX(:,i).*PsiX(:,j)+PsiY(:,i).*PsiY(:,j)).*JW);
+        Mraw(i,j)=sum(Phi(:,i).*Phi(:,j).*JW);
     end
 end
 K = K + triu(K,1)'; Mraw = Mraw + triu(Mraw,1)';

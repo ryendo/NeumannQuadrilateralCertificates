@@ -17,7 +17,8 @@ for k in $(seq 1 "${WORKERS}"); do
   else
     intlab_root="${INTLAB_ROOT}"
   fi
-  matlab -nodisplay -batch "maxNumCompThreads(1); addpath(genpath('${intlab_root}')); cd '${ROOT}'; startintlab; r=QuadrilateralProofRunner('${intlab_root}'); r.setup(); r.runLocalWorker(${k},${WORKERS},${FACE_SUBDIVISIONS},fullfile('${ROOT}','${OUTDIR}'))" \
+  "${ROOT}/scripts/matlab_runner.sh" "${intlab_root}" \
+    "maxNumCompThreads(1); r.runLocalWorker(${k},${WORKERS},${FACE_SUBDIVISIONS},fullfile('${ROOT}','${OUTDIR}'))" \
     > "${ROOT}/${OUTDIR}/log_${k}.txt" 2>&1 &
   sleep 1
 done

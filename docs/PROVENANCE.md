@@ -4,6 +4,15 @@ The local certificate was imported from `ryendo/dq2-quadrilateral-certificate`
 at commit `6d44991af03102a2338e7af69c67767a32e55178` (2026-06-18). The saved
 48-worker result was copied byte-for-byte before the paths were reorganized.
 
+On 2026-07-16 the integrated copy was hardened in two proof-critical places:
+Taylor-remainder bounds from the spatial cells are now accumulated as INTLAB
+intervals before extracting their upper endpoints, and the Gershgorin row
+radii used for `M(te)>0` are summed in interval arithmetic.  The exact 2-by-2
+root-identity refinement already used by the imported code is now exposed in
+the result diagnostics and documented as a proved refinement of Algorithm 1
+in the paper.  The historical saved result predates this hardening and a fresh
+48-worker local run is required before replacing it.
+
 The global MATLAB/INTLAB implementation is a line-by-line mathematical port of
 the local `quad_neumann_global` Python/Arb extract supplied with the paper on
 2026-07-15. Important source SHA-256 values are:
@@ -18,6 +27,29 @@ the local `quad_neumann_global` Python/Arb extract supplied with the paper on
 
 The reference layout was `ryendo/DirichletSimplicityClustered` at commit
 `9331995405ac7fdbcb97e2a9a3ab26c0c9f6bf2b` (2025-12-14).
+
+## Verified generalized eigensolver
+
+Both certificate paths use the MIT-licensed
+[`yuuka-math/veigs`](https://github.com/yuuka-math/veigs) package at commit
+`6556d39a0d9819bb172d232062b698aa76e420f6` (2025-12-15). The repository does
+not bundle the dependency; `VEIGS_ROOT` or the second
+`QuadrilateralProofRunner` constructor argument must point to that exact
+checkout.
+
+The wrapper `src/common/qn_veigs_smallest.m` symmetrizes the interval pencil
+by taking the componentwise hull with its transpose, calls
+`veigs(K,M,1,'sa')`, and rejects results whose returned index information does
+not contain index 1. In the local DQ2 path this enclosure is intersected with
+the Schur-complement enclosure for `lambda_1`; the DQ2 argument remains
+responsible for the double cluster and the sign of `S(t,e)`. In the global
+path the upper endpoint returned by `veigs` replaces the former one-/two-vector
+Rayleigh acceptance test.
+
+The historical local CSV files and the completed pre-`veigs` liulab global
+run were generated before this dependency became mandatory. They remain
+useful regression data but are not run-of-record outputs for the present
+source.
 
 ## Missing global run-of-record source
 
@@ -36,10 +68,34 @@ accepted. `qn_run_global_cover` records the center, half-widths, depth, and
 failure reason for every such box so that a supplied run-of-record algorithm
 can be compared directly.
 
+## Algebraically regular stiffness representation
+
+The Python source evaluates the generic inverse-metric pullback of the
+stiffness form and therefore introduces a factor `1/J`. For the paper's actual
+trial space this factor is removable: the functions are restrictions of fixed
+ambient trigonometric functions, so
+
+```text
+grad_ref(psi o Phi) = DPhi' grad_x(psi)
+```
+
+and the inverse metric cancels to give `(grad_x psi_i . grad_x psi_j) J`.
+The MATLAB/INTLAB code evaluates this algebraically identical expression
+directly. This is not a change to the trial space, Rayleigh--Ritz pencil, box
+test, or subdivision algorithm. It removes the source representation's
+artificial pole at `c_i=J(corner)=0` and permits an entire-integrand GL
+remainder bound on triangle faces.
+
+The boundary-regular smoke test encloses the analytic square pencil, an
+interior pencil, and a parameter box crossing the genuine triangle face
+`c_3=0`. In the current source the interior and boundary boxes must also be
+certified by `veigs` with returned index information containing `1`.
+
 Porting rules:
 
-- The global cover geometry, D4 representative rule, gap threshold, 1-vector
-  and 2-vector tests, and directional fallback are kept. The paper's stated
+- The global cover geometry, D4 representative rule, and directional
+  subdivision fallback are kept. The former 1-vector and 2-vector acceptance
+  tests are replaced by the verified index-1 upper bound from `veigs`. The paper's stated
   longest-side fallback is applied when the maximum-slack axis is already less
   than half the longest half-width; this restores the diameter-to-zero premise
   of the termination proof that the Python extract's bare `argmax(slack)` did
@@ -50,9 +106,10 @@ Porting rules:
   forward-mode jet evaluates the INTLAB gradient over the complete parameter
   box, so `f(c)+Df(B)(B-c)` includes all parameter dependence directly and
   needs no Taylor remainder; no exposed
-  floating derivative is used. The same Bernstein-ellipse Gauss--Legendre
-  truncation padding is added. The spatial rule uses order 20 because the
+  floating derivative is used. Bernstein-ellipse Gauss--Legendre truncation
+  padding is added to both the center values and the parameter gradients in
+  the mean-value form. The spatial rule uses order 20 because the
   source kernel itself notes that global/far boxes require order at least about
   20; its default call left the order at 12, whose non-vanishing truncation pad
-  cannot certify skewed interior points. Floating-point values choose frames
-  and split coordinates only.
+  cannot certify skewed interior points. Floating-point values choose the
+  split coordinate only.
