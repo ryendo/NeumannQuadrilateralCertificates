@@ -1,8 +1,9 @@
 # Source provenance
 
 The local certificate was imported from `ryendo/dq2-quadrilateral-certificate`
-at commit `6d44991af03102a2338e7af69c67767a32e55178` (2026-06-18). The saved
-48-worker result was copied byte-for-byte before the paths were reorganized.
+at commit `6d44991af03102a2338e7af69c67767a32e55178` (2026-06-18). Its original
+48-worker result was copied byte-for-byte before the paths were reorganized;
+Git history retains that superseded output.
 
 On 2026-07-16 the integrated copy was hardened in two proof-critical places:
 Taylor-remainder bounds from the spatial cells are now accumulated as INTLAB
@@ -10,9 +11,7 @@ intervals before extracting their upper endpoints, and the Gershgorin row
 radii used for `M(te)>0` are summed in interval arithmetic.  The exact 2-by-2
 root-identity refinement already used by the imported code is now exposed in
 the result diagnostics and documented as a proved refinement of
-`alg:single-box-certificate` in the paper. The historical saved result predates
-this hardening and a fresh
-48-worker local run is required before replacing it.
+`alg:single-box-certificate` in the paper.
 
 The global MATLAB/INTLAB implementation is a line-by-line mathematical port of
 the local `quad_neumann_global` Python/Arb extract supplied with the paper on
@@ -47,12 +46,32 @@ responsible for the double cluster and the sign of `S(t,e)`. In the global
 path the upper endpoint returned by `veigs` replaces the former one-/two-vector
 Rayleigh acceptance test.
 
-The historical local CSV files and the completed pre-`veigs` liulab global
-run were generated before this dependency became mandatory. They remain
-useful regression data but are not run-of-record outputs for the present
-source.
+## Run-of-record computations (2026-07-29--30)
 
-## Missing global run-of-record source
+Both current certificates were computed on liulab with INTLAB V12 and `veigs`
+commit `6556d39a0d9819bb172d232062b698aa76e420f6`.
+
+| certificate | source commit | workers | completion | principal certified statistic |
+|---|---|---:|---|---:|
+| local | `2d4d4ce4d40202614f98107f3a284c632ce05c13` | 40 | 13,824/13,824 boxes, 0 failures | `min S = 0.0039623492860414444` |
+| global | `7a0d1b42e0c9660fd66a54feca2e38555a940e34` | 18 | 18/18 forests, 0 unverified | `min margin = 2.6545819961754091e-5` |
+
+The later local commit changes only the local certificate and its regression
+tests; the global implementation is unchanged between the two source commits.
+`results/local/` and `results/global/` contain the corresponding summaries,
+per-worker outputs, SHA-256 manifests, and `RUN_PROVENANCE.txt` records.
+
+The local audit found exactly the box IDs `1:13824`, no duplicates, complete
+worker markers, and no failed boxes. The global audit found exactly worker IDs
+`1:18`; every worker reports `complete=true`, and recomputing the sums and
+extrema from the worker JSON files reproduces `summary.json`. In particular,
+the global minimum margin is strictly positive.
+
+The older local CSV files and completed pre-`veigs` global calculation were
+generated before the present eigensolver became mandatory. They are retained
+in Git history only and are not used for the current numerical claims.
+
+## Historical global-source gap
 
 The supplied `quad_neumann_global/README.md` attributes the paper's global
 counts to a development driver named `eigbound_shrink.py` in a parent
@@ -64,10 +83,10 @@ This distinction is observable in the cover itself: the supplied
 `run_cover(n_init=3)` retains 18 root boxes, whereas the paper reports 74 roots
 through `1420 + 337 - 1683 = 74`. On liulab, a faithful MATLAB/INTLAB run of the
 18-root extract reached depth 60 with `qn:Jacobian` on boxes approaching the
-degenerate boundary of `P_K`. The run was stopped and no global summary was
-accepted. `qn_global_certified_cover` records the center, half-widths, depth, and
-failure reason for every such box so that a supplied run-of-record algorithm
-can be compared directly.
+degenerate boundary of `P_K`. That historical run was stopped and no summary
+was accepted. The boundary-regular representation below removed the artificial
+singularity, and the current 18-worker `veigs` run completed with zero
+unverified boxes.
 
 ## Algebraically regular stiffness representation
 

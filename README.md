@@ -39,7 +39,9 @@ f_2(p) > pi^(-2),       0 < ||p|| <= rho_local.
 Equivalently, the final interval sign test proves `S(t,e)>0` on a finite cover
 of `S^3 x (0,rho_local]`, where `p=t e`.
 
-The saved result in `results/local/` has been checked as:
+The current run of record in `results/local/` was computed on liulab with
+source commit `2d4d4ce4d40202614f98107f3a284c632ce05c13`, the pinned `veigs`
+revision listed below, and 40 independent workers. It has been checked as:
 
 | quantity | certified saved value |
 |---|---:|
@@ -47,22 +49,16 @@ The saved result in `results/local/` has been checked as:
 | certified boxes | 13,824 |
 | failures | 0 |
 | box-ID coverage | complete, with no duplicates |
-| worker completion markers | 48/48 |
-| minimum lower bound for `S` | 0.00493500422156500917 |
-| minimum lower bound for `lambda_1` | 7.58452255183086610 |
-| maximum upper bound for `lambda_2` | 13.2685132182832994 |
-| maximum subdivision depth | 2 |
-| wall time | 13.41 h on 48 workers |
+| worker completion markers | 40/40 |
+| minimum lower bound for `S` | 0.0039623492860414444 (box 6736) |
+| minimum lower bound for `lambda_1` | 7.5846307638015062 (box 629) |
+| maximum upper bound for `lambda_2` | 13.268331793903352 (box 2525) |
+| maximum subdivision depth | 3 |
+| maximum worker wall time | 26,049.975498 s (7.24 h) |
 
-This saved run predates the 2026-07-16 rounding hardening and the mandatory
-`veigs` index-1 check. The hardening keeps
-the same mathematical algorithm but accumulates every Taylor-remainder cell
-bound and every Gershgorin row radius with outward-rounded INTLAB operations.
-It also records the coarse `eta/beta` bound separately from the exact
-root-identity refinement.  Until the scheduled full rerun finishes, the table
-above is retained as historical reference data rather than a refreshed result
-of the hardened, `veigs`-checked code. A fresh complete local run is required
-before the table can be promoted to the current run of record.
+Every top-level box is certified, the box IDs are exactly `1:13824`, and all
+40 completion markers are present. The checked-in CSV files, summary, hashes,
+and run provenance are the outputs of this hardened, `veigs`-checked run.
 
 ### Global step
 
@@ -83,25 +79,30 @@ first nonzero Neumann eigenvalue. The local and global regions overlap on
 The source Python code called the seam `RHO_SHARP`; this repository uses the
 paper-aligned names `rho_local` and `rho_seam` to remove that ambiguity.
 
-> **Recalculation status.** No `veigs`-based full-cover result is checked in
-> yet. A complete pre-`veigs` MATLAB/INTLAB run exists on liulab, but its
-> per-box acceptance used the former one-/two-vector Rayleigh tests and is not
-> a run of record for the present code. The supplied Python
-> extract is not the run-of-record driver named in its own README: it omits
-> `eigbound_shrink.py`, the parent `quad_neumann_release/` tree, and
-> `GLOBAL_STEP_AUDIT.md`. A faithful run of the supplied `run_cover(n_init=3)`
-> reaches `qn:Jacobian` on boxes converging to the degenerate boundary of
-> `P_K`. The current MATLAB/INTLAB assembly removes that artificial obstruction
-> by using the exactly equivalent physical-gradient formula described below.
-> On liulab, the revised smoke test certifies representative interior and
-> triangle-boundary boxes using `veigs` with index 1. A new full global run is
-> required before the current global certificate can be declared complete.
+The current run of record in `results/global/` was computed on liulab with
+global source commit `7a0d1b42e0c9660fd66a54feca2e38555a940e34`, whose global
+source is unchanged in commit `2d4d4ce4d40202614f98107f3a284c632ce05c13`,
+and the pinned `veigs` revision:
 
-The reference global run reported 1,420 verified boxes, 337 discarded boxes,
-1,683 bisections, no unverified boxes, maximum depth 26, and positive certified
-slack. A fresh MATLAB/INTLAB run writes its own record to
-`results/global/summary.json`; do not substitute the reference counts for a
-new run's output.
+| quantity | certified saved value |
+|---|---:|
+| retained root boxes | 18 |
+| verified boxes | 166,928 |
+| discarded boxes | 25,285 |
+| bisections | 192,195 |
+| unverified boxes | 0 |
+| `veigs`-certified boxes | 166,928 |
+| maximum subdivision depth | 30 |
+| minimum certified margin | 2.6545819961754091e-5 |
+| worker completion | 18/18 |
+| maximum worker wall time | 32,764.912106 s (9.10 h) |
+| complete | true |
+
+The 18 worker forests cover all retained representatives of the initial
+`n_init=3` cover. Their counts, maximum depth, positive minimum margin, worker
+IDs, and completion flags were independently recomputed from the checked-in
+worker JSON files. These are current `veigs` results, not the superseded
+one-/two-vector interval Rayleigh-test counts.
 
 ## Core Libraries & Dependencies
 
@@ -138,8 +139,8 @@ accept/reject proof decision is made from INTLAB interval endpoints.
 │   └── dq2_*.m                      low-level local DQ2 kernels
 ├── data/taylor_coefficients.mat
 ├── results/
-│   ├── local/                       saved 48-worker certified run
-│   └── global/                      output of a fresh global run
+│   ├── local/                       current 40-worker local veigs run
+│   └── global/                      current 18-worker global veigs run
 ├── tests/                           smoke and regression tests
 ├── scripts/                         shell launchers
 └── PROVENANCE.md
@@ -218,7 +219,7 @@ On liulab, use separate INTLAB copies for independent MATLAB processes:
 ```bash
 export INTLAB_ROOT_PATTERN='/home/rendo/Code_Endo/Intlab_Group/Intlab_V12_no%d'
 export VEIGS_ROOT=/path/to/veigs
-./scripts/run_local_workers.sh 48 12 results/local_new
+./scripts/run_local_workers.sh 40 12 results/local_new
 ```
 
 After all `done_*.txt` files appear:
@@ -249,13 +250,13 @@ On liulab, split the independent root-box forests across INTLAB copies:
 ```bash
 export INTLAB_ROOT_PATTERN='/home/rendo/Code_Endo/Intlab_Group/Intlab_V12_no%d'
 export VEIGS_ROOT=/path/to/veigs
-./scripts/run_global_workers.sh 10
+./scripts/run_global_workers.sh 18
 ```
 
-After `worker_001.json` through `worker_010.json` have appeared:
+After `worker_001.json` through `worker_018.json` have appeared:
 
 ```matlab
-result = qn_merge_global_results('results/global',10,'results/global/summary.json');
+result = qn_merge_global_results('results/global',18,'results/global/summary.json');
 assert(result.complete)
 ```
 

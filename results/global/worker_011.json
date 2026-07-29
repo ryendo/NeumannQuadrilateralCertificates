@@ -1,0 +1,24 @@
+{
+  "verified": 6168,
+  "discarded": 236,
+  "bisected": 6403,
+  "unverified": 0,
+  "veigs_certified": 6168,
+  "max_depth": 15,
+  "min_certified_margin": 1.585091065758121,
+  "min_margin_at": [
+    0.14684832021266259,
+    -0.085658699556461326,
+    0.23984435875809174,
+    0
+  ],
+  "wall_seconds": 6257.53865,
+  "n_init": 3,
+  "initial_retained": 1,
+  "initial_retained_all": 18,
+  "worker_id": 11,
+  "worker_count": 18,
+  "rho_seam": 0.062255590401707306,
+  "complete": true,
+  "unverified_boxes": []
+}

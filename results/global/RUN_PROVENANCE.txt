@@ -1,0 +1,6 @@
+repository=https://github.com/ryendo/NeumannQuadrilateralCertificates
+commit=7a0d1b42e0c9660fd66a54feca2e38555a940e34
+branch=main
+veigs_repository=https://github.com/yuuka-math/veigs
+veigs_commit=6556d39a0d9819bb172d232062b698aa76e420f6
+deployed_utc=2026-07-29T10:41:29Z

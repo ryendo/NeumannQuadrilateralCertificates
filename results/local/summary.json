@@ -1,23 +1,17 @@
 {
   "verified": true,
-  "verification_statement": "VERIFIED: S(t,e)>0 is certified on all saved boxes.",
-  "result_files": 48,
+  "result_files": 40,
   "top_level_boxes": 13824,
   "certified_boxes": 13824,
   "failures": 0,
   "id_coverage_complete": true,
   "done_markers_complete": true,
-  "minimum_certified_lower_bound_for_S": "0.00493500422156500917",
-  "minimum_S_box_id": 10144,
-  "maximum_subdivision_depth": 2,
-  "depth_counts": {
-    "0": 2824,
-    "1": 7536,
-    "2": 3464
-  },
-  "lambda1_lower_min": "7.58452255183086610",
-  "lambda1_lower_min_box_id": 2357,
-  "lambda2_upper_max": "13.2685132182832994",
-  "lambda2_upper_max_box_id": 2657,
-  "wall_time_seconds": "48267.8589369999972"
+  "minimum_certified_lower_bound_for_S": 0.0039623492860414444,
+  "minimum_S_box_id": 6736,
+  "maximum_subdivision_depth": 3,
+  "lambda1_lower_min": 7.5846307638015062,
+  "lambda1_lower_min_box_id": 629,
+  "lambda2_upper_max": 13.268331793903352,
+  "lambda2_upper_max_box_id": 2525,
+  "wall_time_seconds": 26049.975498
 }
