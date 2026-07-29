@@ -59,6 +59,10 @@ revision listed below, and 40 independent workers. It has been checked as:
 Every top-level box is certified, the box IDs are exactly `1:13824`, and all
 40 completion markers are present. The checked-in CSV files, summary, hashes,
 and run provenance are the outputs of this hardened, `veigs`-checked run.
+They certify the single-box `S>0` test and the mandatory index-1 `veigs`
+check. The CSV schema does not separately record `M>0` or the inertia of
+`K-(3*pi^2/2)M`; therefore these files alone are not an audit record for the
+additional cluster-contour test stated in the paper.
 
 ### Global step
 

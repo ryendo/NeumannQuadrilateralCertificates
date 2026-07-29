@@ -67,6 +67,11 @@ worker markers, and no failed boxes. The global audit found exactly worker IDs
 extrema from the worker JSON files reproduces `summary.json`. In particular,
 the global minimum margin is strictly positive.
 
+The local output certifies the implemented single-box `S>0` test and the
+index-1 `veigs` check. It does not contain separate fields for `M>0` or the
+inertia of `K-(3*pi^2/2)M`; it must not be cited as a standalone audit record
+for the paper's additional cluster-contour test.
+
 The older local CSV files and completed pre-`veigs` global calculation were
 generated before the present eigensolver became mandatory. They are retained
 in Git history only and are not used for the current numerical claims.
