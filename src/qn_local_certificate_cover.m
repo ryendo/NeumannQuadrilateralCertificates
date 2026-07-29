@@ -59,13 +59,14 @@ if isempty(parent_data)
     failed = find(~[res.ok]);
     sign_only = arrayfun(@(k) strcmp(res(k).reason,'S') && ...
         ~isempty(res(k).S_core_hessian), failed);
+    sign_levels = failed(sign_only);
     child_parent_data = struct('REM',child_remainder_bounds, ...
         'S_padding',[res.S_padding], ...
-        'veigs_verified',all([res.veigs_verified]));
+        'veigs_verified',all([res(sign_levels).veigs_verified]));
     child_parent_data.S_core_hessian = {res.S_core_hessian};
     tasks = cell(0,3);
     if any(sign_only)
-        tasks(end+1,:) = {failed(sign_only),child_remainder_bounds,child_parent_data};
+        tasks(end+1,:) = {sign_levels,child_remainder_bounds,child_parent_data};
     end
     if any(~sign_only)
         tasks(end+1,:) = {failed(~sign_only),child_remainder_bounds,[]};
