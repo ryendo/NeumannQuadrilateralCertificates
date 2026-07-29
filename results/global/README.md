@@ -1,7 +1,7 @@
 # Global result directory
 
 `summary.json` is created only by a fresh MATLAB/INTLAB/veigs run of
-`qn_run_global_cover`. A complete certificate must have:
+`qn_global_certified_cover`. A complete certificate must have:
 
 ```text
 complete = true

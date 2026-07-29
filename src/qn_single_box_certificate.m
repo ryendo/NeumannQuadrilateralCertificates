@@ -1,6 +1,7 @@
-function [results, REM] = dq2_algorithm1_box(face_box, m, radial_grid, parent_remainder_bounds, t_levels)
+function [results, REM] = qn_single_box_certificate(face_box, m, radial_grid, parent_remainder_bounds, t_levels)
 % Certified INTLAB second-order difference-quotient test on one face box.
-% This implements Algorithm 1 (Single-box certificate) from Sec. 4.1.
+% Implements "Single-box certificate on B"
+% (paper label alg:single-box-certificate).
 %
 % PDF formulas from DQ2-quadrilateral-note-ver4.pdf:
 %   K(p)x = λM(p)x.                                                   (3)
@@ -13,7 +14,7 @@ function [results, REM] = dq2_algorithm1_box(face_box, m, radial_grid, parent_re
 %   F_t(ν) is the 2×2 Schur complement.                               (39)
 %   F̂_t(ν) = F_t(0) + ν∂_νF_t(0).                                    (44),(58)
 %   det F̂_t(ν) = d₂ν² − d₁ν + d₀,   d₁ = t d̃₁.                (45),(59),(60)
-%   L_B, P_B, q_B, Π_B, S_B are Algorithm 1 interval enclosures.  (63)-(67)
+%   L_B, P_B, q_B, Π_B, S_B are the single-box enclosures.           (63)-(67)
 %
 % Code variable map:
 %   face_box                  -> chart box E in B = (E ∩ S³) × T, Eq. (42)
@@ -90,19 +91,19 @@ X0I = V5'*KM1*V5;                            % E_0 block of the first-order penc
 results = repmat(struct('ok',true,'infS',inf,'reason','skip','lam1',[],'lam2',[], ...
                         'S_interval',[],'L_interval',[],'E_B',0,'nu_window',[], ...
                         'S_padding',0,'S_core_hessian',[], ...
-                        'root_identity_used',false,'algorithm1_infS',-inf, ...
+                        'root_identity_used',false,'coarse_infS',-inf, ...
                         'root_identity_gain',0,'veigs_verified',true, ...
                         'veigs_lambda1',[],'veigs_indices',[]), m, 1);
 for k = t_levels(:)'
     results(k).ok = false; results(k).infS = -inf; results(k).reason = '';
     results(k).veigs_verified = false;
     t = dq2_interval_hull(radial_edges(k), radial_edges(k+1));
-    % ---------- Algorithm 1 Steps 1-3: interval blocks and Schur data ----
-    [d1_over_t_I, d2_I, d0_I, S_core_I, schur] = dq2_algorithm1_scalars(CKI, CMI, CbI, EK, EM, Eb, qI, t, FR); % whole-box interval evaluation
+    % -- Single-box certificate: interval blocks and Schur data -----------
+    [d1_over_t_I, d2_I, d0_I, S_core_I, schur] = qn_single_box_quantities(CKI, CMI, CbI, EK, EM, Eb, qI, t, FR); % whole-box interval evaluation
     if isempty(schur), results(k).reason = 'B0inv'; continue; end
     % ---------- centered chains (hessian at center / over box) ----------
-    [d1_over_t_P, d2_P, d0_P, S_core_P] = dq2_algorithm1_scalars(CKP, CMP, CbP, EK, EM, Eb, qP, t, FR); % center Hessian object
-    [d1_over_t_G, d2_G, d0_G, S_core_G] = dq2_algorithm1_scalars(CKG, CMG, CbG, EK, EM, Eb, qG, t, FR); % box Hessian enclosure
+    [d1_over_t_P, d2_P, d0_P, S_core_P] = qn_single_box_quantities(CKP, CMP, CbP, EK, EM, Eb, qP, t, FR); % center Hessian object
+    [d1_over_t_G, d2_G, d0_G, S_core_G] = qn_single_box_quantities(CKG, CMG, CbG, EK, EM, Eb, qG, t, FR); % box Hessian enclosure
     if isempty(d1_over_t_P) || isempty(d1_over_t_G), results(k).reason = 'cinv'; continue; end
     dx = xI - xc;
     d1_over_t_B = intersect(centered_hessian_interval(d1_over_t_P, d1_over_t_G, dx), d1_over_t_I); % d̃₁, Eq. (60)
@@ -190,7 +191,7 @@ for k = t_levels(:)'
     % Save the coarse eta/beta enclosure before applying the exact root
     % identity below.  The identity is part of the certified box algorithm;
     % keeping both bounds makes its contribution auditable in diagnostics.
-    S_B_algorithm1 = S_B;
+    S_B_coarse = S_B;
     root_identity_used = false;
     % ---- signed second-order correction via the exact 2x2 root identity ----
     gap = nu2_interval - nu1_interval;
@@ -263,8 +264,8 @@ for k = t_levels(:)'
     results(k).S_padding = S_padding;
     results(k).S_core_hessian = S_core_G;
     results(k).root_identity_used = root_identity_used;
-    results(k).algorithm1_infS = inf(S_B_algorithm1);
-    results(k).root_identity_gain = inf(S_B) - inf(S_B_algorithm1);
+    results(k).coarse_infS = inf(S_B_coarse);
+    results(k).root_identity_gain = inf(S_B) - inf(S_B_coarse);
     if results(k).veigs_verified && inf(S_B) > 0 && inf(lam1) > 0
         results(k).ok = true;
     else

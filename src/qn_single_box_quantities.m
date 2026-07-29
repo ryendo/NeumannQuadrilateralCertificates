@@ -1,6 +1,7 @@
-function [d1_over_t,d2,d0,S_core,schur] = dq2_algorithm1_scalars(CK,CM,Cb,EK,EM,Eb,q,t,FR)
-% Schur/Vieta quantities shared by full DQ2 checks and sign-only retests.
-% The operation order matches Algorithm 1, Eqs. (29)--(30), (59)--(60), (67).
+function [d1_over_t,d2,d0,S_core,schur] = qn_single_box_quantities(CK,CM,Cb,EK,EM,Eb,q,t,FR)
+% Schur/Vieta quantities shared by the single-box certificate and retests.
+% Operation order matches alg:single-box-certificate,
+% Eqs. (29)--(30), (59)--(60), (67).
 
 PI2=FR.PI2; V5=FR.V5; W5=FR.W5; D0=FR.D0; I2=FR.I2; I3=FR.I3;
 

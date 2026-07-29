@@ -9,7 +9,7 @@ mkdir -p "${ROOT}/results/global"
 for k in $(seq 1 "${WORKERS}"); do
   intlab_root="$(printf "${INTLAB_ROOT_PATTERN}" "$k")"
   "${ROOT}/scripts/matlab_runner.sh" "${intlab_root}" \
-    "maxNumCompThreads(1); r.runGlobal(fullfile('${ROOT}','results','global',sprintf('worker_%03d.json',${k})),${k},${WORKERS})" \
+    "maxNumCompThreads(1); r.runGlobalCertifiedCover(fullfile('${ROOT}','results','global',sprintf('worker_%03d.json',${k})),${k},${WORKERS})" \
     > "${ROOT}/results/global/log_${k}.txt" 2>&1 &
   sleep 1
 done

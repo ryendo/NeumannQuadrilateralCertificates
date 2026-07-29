@@ -132,8 +132,10 @@ accept/reject proof decision is made from INTLAB interval endpoints.
 .
 ├── QuadrilateralProofRunner.m       unified entry point
 ├── src/                             all proof implementation
-│   ├── dq2_*.m                      DQ2 local certificate
-│   └── qn_*.m                       global/shared certificate code
+│   ├── qn_single_box_certificate.m  paper alg:single-box-certificate
+│   ├── qn_global_certified_cover.m  paper alg:global-certified-cover
+│   ├── qn_*.m                       certificate orchestration/shared code
+│   └── dq2_*.m                      low-level local DQ2 kernels
 ├── data/taylor_coefficients.mat
 ├── results/
 │   ├── local/                       saved 48-worker certified run
@@ -165,7 +167,7 @@ floating-point center value, exercises a representative per-box test, and
 verifies the saved local CSV set.
 
 The focused local proof-path regression test additionally exercises rigorous
-Taylor-remainder accumulation, the coarse Algorithm-1 bound, and the exact
+Taylor-remainder accumulation, the coarse single-box bound, and the exact
 root-identity refinement:
 
 ```matlab
@@ -236,7 +238,7 @@ export VEIGS_ROOT=/path/to/veigs
 or in MATLAB:
 
 ```matlab
-result = r.runGlobal();
+result = r.runGlobalCertifiedCover();
 assert(result.complete)
 assert(result.unverified == 0)
 assert(result.min_certified_margin > 0)
@@ -313,14 +315,14 @@ These timing values are diagnostics, not proof inputs.
 
 | paper item | implementation |
 |---|---|
-| local single-box Algorithm 1 | `src/dq2_algorithm1_box.m` |
-| local cover and subdivision | `src/dq2_run_certificate.m` |
+| Algorithm `alg:single-box-certificate` | `src/qn_single_box_certificate.m` |
+| local cover and subdivision | `src/qn_local_certificate_cover.m` |
 | local Taylor remainder | `src/dq2_bound_taylor_remainder_vectorized.m` |
 | verified index-1 generalized eigenvalue | `src/qn_veigs_smallest.m` |
 | Proposition `p:box-bound` | `src/qn_certify_box.m` |
 | interval pencil `K(B),M(B)` | `src/qn_km_enclosure.m` |
 | GL truncation enclosure | `src/qn_gl_pad.m` |
-| Theorem `t:box-cover-terminates` | `src/qn_run_global_cover.m` |
+| Algorithm `alg:global-certified-cover` | `src/qn_global_certified_cover.m` |
 | `P_K`, `P_C`, seam and `D_4` logic | `src/qn_*box*.m`, `src/qn_global_constants.m` |
 
 ## Trust boundary

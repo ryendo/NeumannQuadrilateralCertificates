@@ -28,15 +28,15 @@ classdef QuadrilateralProofRunner < handle
             if nargin<2, resultsDir=fullfile(self.Root,'results','local'); end
             summary=qn_summarize_local_results(resultsDir);
         end
-        function runLocalWorker(self,workerId,workerCount,faceSubdivisions,outDir)
+        function runSingleBoxCertificateWorker(self,workerId,workerCount,faceSubdivisions,outDir)
             if nargin<5, outDir=fullfile(self.Root,'results','local_new'); end
-            dq2_run_certificate(workerId,workerCount,faceSubdivisions,0,0,0,outDir);
+            qn_local_certificate_cover(workerId,workerCount,faceSubdivisions,outDir);
         end
-        function result=runGlobal(self,outputFile,workerId,workerCount)
+        function result=runGlobalCertifiedCover(self,outputFile,workerId,workerCount)
             if nargin<2, outputFile=fullfile(self.Root,'results','global','summary.json'); end
             if nargin<3, workerId=1; end
             if nargin<4, workerCount=1; end
-            result=qn_run_global_cover(3,60,true,outputFile,workerId,workerCount);
+            result=qn_global_certified_cover(3,60,true,outputFile,workerId,workerCount);
         end
         function report=smokeTest(self)
             report=qn_smoke_test(self.Root);

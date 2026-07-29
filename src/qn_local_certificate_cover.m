@@ -1,16 +1,16 @@
-function dq2_run_certificate(worker_id, worker_count, face_subdivisions, ~, ~, ~, outdir)
-% Process one worker slice of the S^3 face-box covering.
-% This is the outer covering/subdivision loop around Algorithm 1 in Sec. 4.1.
+function qn_local_certificate_cover(worker_id, worker_count, face_subdivisions, outdir)
+% Process one worker slice of the local single-box-certificate cover.
+% This is the covering/subdivision loop around alg:single-box-certificate.
 %
 % PDF notation:
 %   p = t e, e ∈ S³, 0 ≤ t ≤ ρ#                         Sec. 1
 %   B = (E ∩ S³) × T                                    Eq. (42)
 %   S(t,e), S_B                                         Eqs. (13), (67)
-%   Algorithm 1 returns VERIFIED/UNDECIDED              Sec. 4.1
+%   Single-box certificate returns VERIFIED/UNDECIDED
 %
 % Evaluation:
 %   The face boxes E_j are ordinary floating-point endpoints, immediately
-%   converted to INTLAB intervals inside dq2_algorithm1_box.m.  Each box is
+%   converted to INTLAB intervals inside qn_single_box_certificate.m. Each box is
 %   certified by interval arithmetic; boxes failing only S(t,e)>0 are
 %   recursively subdivided and re-tested.
 %
@@ -18,7 +18,7 @@ function dq2_run_certificate(worker_id, worker_count, face_subdivisions, ~, ~, ~
 % Every real-valued CSV field is written with %.17e so the decimal strings
 % retain round-trip double precision for the INTLAB interval endpoints.
 
-if nargin < 7, outdir = 'results'; end
+if nargin < 4, outdir = 'results'; end
 if ~exist(outdir, 'dir'), mkdir(outdir); end
 PI = intval('pi');
 rho = 3232/(27*PI^6);                         % rho# in Sec. 1
@@ -52,8 +52,8 @@ end
 function proof = certify_with_subdivision(face_box, depth, radial_grid, remainder_bounds, t_levels, parent_data)
 maxdepth = 6;
 if isempty(parent_data)
-    % Full single-box certificate: Algorithm 1, Steps 1-14.
-    [res, child_remainder_bounds] = dq2_algorithm1_box(face_box, [], radial_grid, remainder_bounds, t_levels);
+    % Full execution of alg:single-box-certificate.
+    [res, child_remainder_bounds] = qn_single_box_certificate(face_box, [], radial_grid, remainder_bounds, t_levels);
     proof = summarize_results(res, depth);
     if proof.verified || depth >= maxdepth, return; end
     failed = find(~[res.ok]);
@@ -134,7 +134,7 @@ end
 
 function B = face_boxes(n)
 % Floating-point chart endpoints for the 8 standard face charts of S^3.
-% They are interpreted as INTLAB intervals in dq2_algorithm1_box.m.
+% They are interpreted as INTLAB intervals in qn_single_box_certificate.m.
 edges = linspace(-1, 1, n + 1);
 B = zeros(8*n^3, 8);
 r = 0;

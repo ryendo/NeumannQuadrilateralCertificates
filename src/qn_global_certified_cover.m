@@ -1,5 +1,6 @@
-function result = qn_run_global_cover(n_init,max_depth,verbose,output_file,worker_id,worker_count)
-% Serial certified adaptive cover for the paper's global step.
+function result = qn_global_certified_cover(n_init,max_depth,verbose,output_file,worker_id,worker_count)
+% Implements "Global certified cover"
+% (paper label alg:global-certified-cover).
 
 if nargin<1 || isempty(n_init), n_init=3; end
 C=qn_global_constants();

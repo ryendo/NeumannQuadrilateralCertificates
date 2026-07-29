@@ -1,7 +1,7 @@
 function results = dq2_retest_sign_box(child_box, radial_grid, t_levels, parent_data)
 % Cheap re-test of S-only failures on a sub-box.
 % This only rechecks the final sign condition inf S_B > 0 from
-% Algorithm 1, Steps 13-15; the ancestor box already certified the
+% Final sign steps of alg:single-box-certificate; the ancestor already certified
 % Schur/root conditions.
 %
 % PDF notation:
@@ -43,7 +43,7 @@ m = size(radial_grid, 2) - 1;
 results = repmat(struct('ok',true,'infS',inf,'reason','skip'), m, 1);
 for k = t_levels(:)'
     t = dq2_interval_hull(radial_grid(k), radial_grid(k+1));
-    [~, d2_P, ~, S_core_center_data] = dq2_algorithm1_scalars(CKP, CMP, CbP, EK, EM, Eb, qP, t, FR); % centered S_B data, Eq. (67)
+    [~, d2_P, ~, S_core_center_data] = qn_single_box_quantities(CKP, CMP, CbP, EK, EM, Eb, qP, t, FR); % centered S_B data, Eq. (67)
     if isempty(S_core_center_data) || isempty(d2_P), results(k).ok = false; results(k).infS = -inf; results(k).reason = 'cinv'; continue; end
     % centered form: point value+gradient at child center, ancestor Hessian
     S_core_hessian = parent_data.S_core_hessian{k};

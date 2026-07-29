@@ -9,8 +9,9 @@ Taylor-remainder bounds from the spatial cells are now accumulated as INTLAB
 intervals before extracting their upper endpoints, and the Gershgorin row
 radii used for `M(te)>0` are summed in interval arithmetic.  The exact 2-by-2
 root-identity refinement already used by the imported code is now exposed in
-the result diagnostics and documented as a proved refinement of Algorithm 1
-in the paper.  The historical saved result predates this hardening and a fresh
+the result diagnostics and documented as a proved refinement of
+`alg:single-box-certificate` in the paper. The historical saved result predates
+this hardening and a fresh
 48-worker local run is required before replacing it.
 
 The global MATLAB/INTLAB implementation is a line-by-line mathematical port of
@@ -64,7 +65,7 @@ This distinction is observable in the cover itself: the supplied
 through `1420 + 337 - 1683 = 74`. On liulab, a faithful MATLAB/INTLAB run of the
 18-root extract reached depth 60 with `qn:Jacobian` on boxes approaching the
 degenerate boundary of `P_K`. The run was stopped and no global summary was
-accepted. `qn_run_global_cover` records the center, half-widths, depth, and
+accepted. `qn_global_certified_cover` records the center, half-widths, depth, and
 failure reason for every such box so that a supplied run-of-record algorithm
 can be compared directly.
 
