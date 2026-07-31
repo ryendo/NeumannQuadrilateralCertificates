@@ -39,9 +39,8 @@ f_2(p) > pi^(-2),       0 < ||p|| <= rho_local.
 Equivalently, the final interval sign test proves `S(t,e)>0` on a finite cover
 of `S^3 x (0,rho_local]`, where `p=t e`.
 
-The current run of record in `results/local/` was computed on liulab with
-source commit `2d4d4ce4d40202614f98107f3a284c632ce05c13`, the pinned `veigs`
-revision listed below, and 40 independent workers. It has been checked as:
+The current run of record in `results/local/` was computed with 40 independent
+workers. It has been checked as:
 
 | quantity | certified saved value |
 |---|---:|
@@ -57,8 +56,8 @@ revision listed below, and 40 independent workers. It has been checked as:
 | maximum worker wall time | 26,049.975498 s (7.24 h) |
 
 Every top-level box is certified, the box IDs are exactly `1:13824`, and all
-40 completion markers are present. The checked-in CSV files, summary, hashes,
-and run provenance are the outputs of this hardened, `veigs`-checked run.
+40 completion markers are present. The checked-in CSV files, summary, and run
+provenance are the outputs of this hardened, `veigs`-checked run.
 They certify the single-box `S>0` test and the mandatory index-1 `veigs`
 check. The CSV schema does not separately record `M>0` or the inertia of
 `K-(3*pi^2/2)M`; therefore these files alone are not an audit record for the
@@ -83,10 +82,8 @@ first nonzero Neumann eigenvalue. The local and global regions overlap on
 The source Python code called the seam `RHO_SHARP`; this repository uses the
 paper-aligned names `rho_local` and `rho_seam` to remove that ambiguity.
 
-The current run of record in `results/global/` was computed on liulab with
-global source commit `7a0d1b42e0c9660fd66a54feca2e38555a940e34`, whose global
-source is unchanged in commit `2d4d4ce4d40202614f98107f3a284c632ce05c13`,
-and the pinned `veigs` revision:
+The current run of record in `results/global/` uses the verified eigensolver
+described below:
 
 | quantity | certified saved value |
 |---|---:|
@@ -123,7 +120,6 @@ computation:
    bundled.
    * **Source:** [https://github.com/yuuka-math/veigs](https://github.com/yuuka-math/veigs)
      [2025/12/13]
-   * **Pinned revision:** `6556d39a0d9819bb172d232062b698aa76e420f6`
 4. A POSIX shell, required only for the optional launch scripts.
 
 All non-integer proof constants and decimal bounds are parsed from strings,
@@ -152,11 +148,10 @@ accept/reject proof decision is made from INTLAB interval endpoints.
 
 ## Setup and quick check
 
-Install the pinned `veigs` revision:
+Install `veigs`:
 
 ```bash
 git clone https://github.com/yuuka-math/veigs.git /path/to/veigs
-git -C /path/to/veigs checkout 6556d39a0d9819bb172d232062b698aa76e420f6
 ```
 
 In MATLAB:
@@ -218,10 +213,10 @@ export VEIGS_ROOT=/path/to/veigs
 ./scripts/run_local_workers.sh 16 12 results/local_new
 ```
 
-On liulab, use separate INTLAB copies for independent MATLAB processes:
+To use separate INTLAB copies for independent MATLAB processes:
 
 ```bash
-export INTLAB_ROOT_PATTERN='/home/rendo/Code_Endo/Intlab_Group/Intlab_V12_no%d'
+export INTLAB_ROOT_PATTERN='/path/to/Intlab_V12_no%d'
 export VEIGS_ROOT=/path/to/veigs
 ./scripts/run_local_workers.sh 40 12 results/local_new
 ```
@@ -249,10 +244,10 @@ assert(result.unverified == 0)
 assert(result.min_certified_margin > 0)
 ```
 
-On liulab, split the independent root-box forests across INTLAB copies:
+To split the independent root-box forests across INTLAB copies:
 
 ```bash
-export INTLAB_ROOT_PATTERN='/home/rendo/Code_Endo/Intlab_Group/Intlab_V12_no%d'
+export INTLAB_ROOT_PATTERN='/path/to/Intlab_V12_no%d'
 export VEIGS_ROOT=/path/to/veigs
 ./scripts/run_global_workers.sh 18
 ```
@@ -304,9 +299,9 @@ The global assembly evaluates the same 20-by-20 interval GL rule as the scalar
 reference, but batches its 400 nodes in INTLAB arrays. Parameter derivatives
 are the explicit chain-rule formulas for `X`, `Y`, `J`, the five modes, and
 their physical gradients; no derivative is approximated by floating point.
-On a representative liulab box, the complete warm per-box test decreased from
-about 25.2 seconds to 0.24 seconds during development. The former scalar
-reference implementation has since been removed.
+On a representative box, the complete warm per-box test decreased from about
+25.2 seconds to 0.24 seconds during development. The former scalar reference
+implementation has since been removed.
 
 The local code similarly evaluates the existing exact monomial coefficient
 table by exponent groups and batches the four Taylor-remainder integration
@@ -353,8 +348,8 @@ These timing values are diagnostics, not proof inputs.
 - Center eigensolves and finite-difference sensitivities are non-certified,
   but they only select the split coordinate and do not enter acceptance.
 
-See [PROVENANCE.md](PROVENANCE.md) for source commits, hashes, and the
-Arb-to-INTLAB porting record.
+See [PROVENANCE.md](PROVENANCE.md) for source provenance and the Arb-to-INTLAB
+porting record.
 
 ## Confidentiality
 
