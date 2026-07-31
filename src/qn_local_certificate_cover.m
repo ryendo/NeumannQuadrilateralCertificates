@@ -25,7 +25,8 @@ rho = 3232/(27*PI^6);                         % rho# in Sec. 1
 tmax = intval(sup(rho))*intval('1.000000000001');
 radial_grid = tmax * (intval([0 2 4 6 8 10 12 14 15 16])/intval(16)); % T intervals, refined near ρ#
 fid = fopen(sprintf('%s/res_%03d.csv', outdir, worker_id), 'w');
-fprintf(fid, 'box_id,ok,inf_S,max_subdivision_depth,elapsed_seconds,lambda1_lower,lambda2_upper\n');
+fprintf(fid, ['box_id,ok,inf_S,max_subdivision_depth,elapsed_seconds,' ...
+    'lambda1_lower,lambda2_upper,mass_eigenvalue_lower,lambda3_lower,lambda3_gap_lower\n']);
 face_box_table = face_boxes(face_subdivisions); % E boxes for B in Eq. (42)
 total_boxes = size(face_box_table, 1);
 tstart = tic;
@@ -35,9 +36,10 @@ for box_id = worker_id:worker_count:total_boxes
     proof = certify_with_subdivision(face_box, 0, radial_grid, [], [], []);
     worst_lower_S = min(worst_lower_S, proof.lower_S);
     if ~proof.verified, failed_boxes = failed_boxes + 1; end
-    fprintf(fid, '%d,%d,%.17e,%d,%.17e,%.17e,%.17e\n', ...
+    fprintf(fid, '%d,%d,%.17e,%d,%.17e,%.17e,%.17e,%.17e,%.17e,%.17e\n', ...
         box_id, proof.verified, proof.lower_S, proof.depth, toc(tstart), ...
-        proof.lambda1_lower, proof.lambda2_upper);
+        proof.lambda1_lower, proof.lambda2_upper,proof.mass_lower, ...
+        proof.lambda3_lower,proof.lambda3_gap_lower);
     if mod(box_id, 40*worker_count) < worker_count
         fprintf('proc %d: box %d/%d worstS=%.3f fails=%d (%.0fs)\n', ...
                 worker_id, box_id, total_boxes, worst_lower_S, failed_boxes, toc(tstart));
@@ -98,12 +100,18 @@ ok=[res.ok];
 lower=min([res(ok).infS]);
 if isempty(lower), lower=inf; end
 proof=struct('verified',all(ok),'lower_S',lower,'depth',depth, ...
-    'lambda1_lower',inf,'lambda2_upper',-inf);
+    'lambda1_lower',inf,'lambda2_upper',-inf,'mass_lower',inf, ...
+    'lambda3_lower',inf,'lambda3_gap_lower',inf);
 if ~isfield(res,'lam1'), return; end
 for k=1:numel(res)
     if ~isempty(res(k).lam1)
         proof.lambda1_lower=min(proof.lambda1_lower,res(k).lam1(1));
         proof.lambda2_upper=max(proof.lambda2_upper,res(k).lam2(2));
+    end
+    if isfield(res,'mass_lower') && ~isempty(res(k).mass_lower)
+        proof.mass_lower=min(proof.mass_lower,res(k).mass_lower);
+        proof.lambda3_lower=min(proof.lambda3_lower,res(k).lambda3_lower);
+        proof.lambda3_gap_lower=min(proof.lambda3_gap_lower,res(k).lambda3_gap_lower);
     end
 end
 end
@@ -114,6 +122,9 @@ proof.lower_S=min(proof.lower_S,child.lower_S);
 proof.depth=max(proof.depth,child.depth);
 proof.lambda1_lower=min(proof.lambda1_lower,child.lambda1_lower);
 proof.lambda2_upper=max(proof.lambda2_upper,child.lambda2_upper);
+proof.mass_lower=min(proof.mass_lower,child.mass_lower);
+proof.lambda3_lower=min(proof.lambda3_lower,child.lambda3_lower);
+proof.lambda3_gap_lower=min(proof.lambda3_gap_lower,child.lambda3_gap_lower);
 end
 
 function child_boxes = subdivide_face_box(parent_box)

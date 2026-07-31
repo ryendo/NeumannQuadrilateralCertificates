@@ -93,7 +93,9 @@ results = repmat(struct('ok',true,'infS',inf,'reason','skip','lam1',[],'lam2',[]
                         'S_padding',0,'S_core_hessian',[], ...
                         'root_identity_used',false,'coarse_infS',-inf, ...
                         'root_identity_gain',0,'veigs_verified',true, ...
-                        'veigs_lambda1',[],'veigs_indices',[]), m, 1);
+                        'veigs_lambda1',[],'veigs_indices',[], ...
+                        'mass_lower',[],'lambda3_lower',[], ...
+                        'lambda3_gap_lower',[]), m, 1);
 for k = t_levels(:)'
     results(k).ok = false; results(k).infS = -inf; results(k).reason = '';
     results(k).veigs_verified = false;
@@ -169,15 +171,30 @@ for k = t_levels(:)'
     Mte = M0 + t*schur.DtM;                   % M(te), Eqs. (3), (57), positive-definite check
     Kte = K0 + t*schur.DtK;                   % K(te), from the same Taylor quotient
     gersh = true;
+    mass_lower = inf;
     for i = 1:5
         jj = [1:i-1, i+1:5];
         % mag(...) gives componentwise floating-point upper bounds.  Convert
         % them back to intervals before summing so the row-radius sum is
         % guaranteed to be rounded upward.
         off = sum(intval(mag(Mte(i,jj))));
-        if inf(Mte(i,i) - off) <= 0, gersh = false; break; end
+        row_lower = inf(Mte(i,i) - off);
+        mass_lower = min(mass_lower,row_lower);
+        if row_lower <= 0, gersh = false; break; end
     end
     if ~gersh, results(k).reason = 'W1'; continue; end
+    % Since M(te)>0, inertia(K(te)-tau_3 M(te))=(3,0,2) implies
+    % lambda_3(te)>tau_3.  The fixed rational threshold tau_3=16 lies above
+    % 3*pi^2/2 and gives an explicit uniform lower bound for the gap.
+    tau3 = intval(16);
+    [inertia_ok,negative_pivots] = interval_inertia(Kte-tau3*Mte);
+    if ~inertia_ok || negative_pivots ~= 2
+        results(k).reason = 'W6'; continue;
+    end
+    lambda3_gap_lower = inf(tau3-intval(3)*PI2/intval(2));
+    if lambda3_gap_lower <= 0
+        results(k).reason = 'W6'; continue;
+    end
     sbar = upper_abs(I_nu);
     L_padding = sup(intval(2)*intval(eta)/intval(beta)); % L_B padding, Eq. (63)
     P_padding = sup(intval(2)*intval(sbar)*intval(E_B) + sqr(intval(E_B))); % P_B padding, Eq. (64)
@@ -254,6 +271,9 @@ for k = t_levels(:)'
     results(k).veigs_verified=true;
     results(k).veigs_lambda1=[inf(veigs_lam1),sup(veigs_lam1)];
     results(k).veigs_indices=veigs_info.indices;
+    results(k).mass_lower=mass_lower;
+    results(k).lambda3_lower=inf(tau3);
+    results(k).lambda3_gap_lower=lambda3_gap_lower;
     results(k).infS = inf(S_B);
     results(k).lam1 = [inf(lam1), sup(lam1)];
     results(k).lam2 = [inf(lam2), sup(lam2)];
@@ -296,6 +316,28 @@ end
 
 function S = symm(A)
 S = (A + A')/2;
+end
+
+function [ok,negative_pivots] = interval_inertia(A)
+% Interval LDL' elimination.  Signed pivots certify a constant inertia for
+% every symmetric point matrix in A.
+A = symm(A);
+negative_pivots = 0;
+ok = true;
+while ~isempty(A)
+    pivot = A(1,1);
+    if inf(pivot) > 0
+        % positive pivot
+    elseif sup(pivot) < 0
+        negative_pivots = negative_pivots + 1;
+    else
+        ok = false;
+        return
+    end
+    if size(A,1) == 1, return; end
+    A = A(2:end,2:end)-A(2:end,1)*A(1,2:end)/pivot;
+    A = symm(A);
+end
 end
 
 function d = det2(A)
