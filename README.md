@@ -39,29 +39,20 @@ f_2(p) > pi^(-2),       0 < ||p|| <= rho_local.
 Equivalently, the final interval sign test proves `S(t,e)>0` on a finite cover
 of `S^3 x (0,rho_local]`, where `p=t e`.
 
-The current run of record in `results/local/` was computed with 40 independent
-workers. It has been checked as:
+The certified results reported in Appendix B, Table 4 of the paper are:
 
 | quantity | certified saved value |
 |---|---:|
-| top-level boxes | 13,824 |
-| certified boxes | 13,824 |
-| failures | 0 |
-| box-ID coverage | complete, with no duplicates |
-| worker completion markers | 40/40 |
-| minimum lower bound for `S` | 0.0039623492860414444 (box 6736) |
-| minimum lower bound for `lambda_1` | 7.5846307638015062 (box 629) |
-| maximum upper bound for `lambda_2` | 13.268331793903352 (box 2525) |
-| maximum subdivision depth | 3 |
-| maximum worker wall time | 26,049.975498 s (7.24 h) |
+| initial products / maximum depth | 13,824 × 9 / 3 |
+| certified lower bound for `S` | 0.0039623492860414444 |
+| certified bounds for (`lambda_1`, `lambda_2`) | `lambda_1 >= 7.584`, `lambda_2 <= 13.269` |
+| outcome | verified on every final box |
 
-Every top-level box is certified, the box IDs are exactly `1:13824`, and all
-40 completion markers are present. The checked-in CSV files, summary, and run
-provenance are the outputs of this hardened, `veigs`-checked run.
-They certify the single-box `S>0` test and the mandatory index-1 `veigs`
-check. The CSV schema does not separately record `M>0` or the inertia of
-`K-(3*pi^2/2)M`; therefore these files alone are not an audit record for the
-additional cluster-contour test stated in the paper.
+The numerical realization in Section 5 records the more precise cluster
+bounds `lambda_1 >= 7.5846307638015062` and
+`lambda_2 <= 13.268331793903352`. The checked-in CSV files and summary provide
+the machine-readable output for the single-box `S>0` test and the index-1
+`veigs` check.
 
 ### Global step
 
@@ -82,28 +73,19 @@ first nonzero Neumann eigenvalue. The local and global regions overlap on
 The source Python code called the seam `RHO_SHARP`; this repository uses the
 paper-aligned names `rho_local` and `rho_seam` to remove that ambiguity.
 
-The current run of record in `results/global/` uses the verified eigensolver
-described below:
+The certified results reported in Appendix C, Table 5 of the paper are:
 
 | quantity | certified saved value |
 |---|---:|
-| retained root boxes | 18 |
-| verified boxes | 166,928 |
-| discarded boxes | 25,285 |
+| initial boxes / maximum depth | 18 / 30 |
+| accepted / discarded / unresolved boxes | 166,928 / 25,285 / 0 |
 | bisections | 192,195 |
-| unverified boxes | 0 |
-| `veigs`-certified boxes | 166,928 |
-| maximum subdivision depth | 30 |
-| minimum certified margin | 2.6545819961754091e-5 |
-| worker completion | 18/18 |
-| maximum worker wall time | 32,764.912106 s (9.10 h) |
-| complete | true |
+| `Delta_*` | 2.6545819961754091e-5 |
+| conclusion | `|Q_p| lambda_1(p) < pi^2` on `Omega_II` |
 
-The 18 worker forests cover all retained representatives of the initial
-`n_init=3` cover. Their counts, maximum depth, positive minimum margin, worker
-IDs, and completion flags were independently recomputed from the checked-in
-worker JSON files. These are current `veigs` results, not the superseded
-one-/two-vector interval Rayleigh-test counts.
+Every accepted box is certified by `veigs`, and no box is left unresolved.
+The checked-in worker JSON files provide the machine-readable output for this
+finite cover.
 
 ## Core Libraries & Dependencies
 
@@ -139,8 +121,8 @@ accept/reject proof decision is made from INTLAB interval endpoints.
 │   └── dq2_*.m                      low-level local DQ2 kernels
 ├── data/taylor_coefficients.mat
 ├── results/
-│   ├── local/                       current 40-worker local veigs run
-│   └── global/                      current 18-worker global veigs run
+│   ├── local/                       current local veigs run
+│   └── global/                      current global veigs run
 ├── tests/                           smoke and regression tests
 ├── scripts/                         shell launchers
 └── PROVENANCE.md
