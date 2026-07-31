@@ -46,14 +46,14 @@ responsible for the double cluster and the sign of `S(t,e)`. In the global
 path the upper endpoint returned by `veigs` replaces the former one-/two-vector
 Rayleigh acceptance test.
 
-## Run-of-record computations (2026-07-29--30)
+## Run-of-record computations (2026-07-29--31)
 
 Both current certificates were computed on liulab with INTLAB V12 and `veigs`
 commit `6556d39a0d9819bb172d232062b698aa76e420f6`.
 
 | certificate | source commit | workers | completion | principal certified statistic |
 |---|---|---:|---|---:|
-| local | `2d4d4ce4d40202614f98107f3a284c632ce05c13` | 40 | 13,824/13,824 boxes, 0 failures | `min S = 0.0039623492860414444` |
+| local | `8910c627d2c2d64a4ae9df57bd12a6a4f1545b94` | 40 | 13,824/13,824 boxes, 0 failures | `min S = 0.0039623492860414444`, `min lambda_min(M) = 0.05158622853755157`, `min(lambda_3-3*pi^2/2) = 1.1955933983659577` |
 | global | `7a0d1b42e0c9660fd66a54feca2e38555a940e34` | 18 | 18/18 forests, 0 unverified | `min margin = 2.6545819961754091e-5` |
 
 The later local commit changes only the local certificate and its regression
@@ -67,10 +67,9 @@ worker markers, and no failed boxes. The global audit found exactly worker IDs
 extrema from the worker JSON files reproduces `summary.json`. In particular,
 the global minimum margin is strictly positive.
 
-The local output certifies the implemented single-box `S>0` test and the
-index-1 `veigs` check. It does not contain separate fields for `M>0` or the
-inertia of `K-(3*pi^2/2)M`; it must not be cited as a standalone audit record
-for the paper's additional cluster-contour test.
+The local output certifies the implemented single-box `S>0` test, the index-1
+`veigs` check, `lambda_min(M)>0`, and exactly two generalized eigenvalues below
+16. The CSV files record the corresponding mass and `lambda_3` lower bounds.
 
 The older local CSV files and completed pre-`veigs` global calculation were
 generated before the present eigensolver became mandatory. They are retained

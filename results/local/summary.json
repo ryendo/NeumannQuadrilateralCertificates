@@ -13,5 +13,11 @@
   "lambda1_lower_min_box_id": 629,
   "lambda2_upper_max": 13.268331793903352,
   "lambda2_upper_max_box_id": 2525,
-  "wall_time_seconds": 26049.975498
+  "mass_eigenvalue_lower_min": 0.051586228537551571,
+  "mass_eigenvalue_lower_min_box_id": 11044,
+  "lambda3_lower_min": 16,
+  "lambda3_lower_min_box_id": 1,
+  "lambda3_gap_lower_min": 1.1955933983659577,
+  "lambda3_gap_lower_min_box_id": 1,
+  "wall_time_seconds": 25998.027544
 }

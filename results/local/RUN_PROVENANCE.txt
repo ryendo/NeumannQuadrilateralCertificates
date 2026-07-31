@@ -1,6 +1,6 @@
 repository=https://github.com/ryendo/NeumannQuadrilateralCertificates
-commit=2d4d4ce4d40202614f98107f3a284c632ce05c13
-branch=main
+commit=8910c627d2c2d64a4ae9df57bd12a6a4f1545b94
+branch=agent/certify-local-spectral-margins
 veigs_repository=https://github.com/yuuka-math/veigs
 veigs_commit=6556d39a0d9819bb172d232062b698aa76e420f6
-deployed_utc=2026-07-29T10:54:52Z
+deployed_utc=2026-07-31T07:27:54Z

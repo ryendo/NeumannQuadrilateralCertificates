@@ -40,7 +40,7 @@ Equivalently, the final interval sign test proves `S(t,e)>0` on a finite cover
 of `S^3 x (0,rho_local]`, where `p=t e`.
 
 The current run of record in `results/local/` was computed on liulab with
-source commit `2d4d4ce4d40202614f98107f3a284c632ce05c13`, the pinned `veigs`
+source commit `8910c627d2c2d64a4ae9df57bd12a6a4f1545b94`, the pinned `veigs`
 revision listed below, and 40 independent workers. It has been checked as:
 
 | quantity | certified saved value |
@@ -50,19 +50,20 @@ revision listed below, and 40 independent workers. It has been checked as:
 | failures | 0 |
 | box-ID coverage | complete, with no duplicates |
 | worker completion markers | 40/40 |
-| minimum lower bound for `S` | 0.0039623492860414444 (box 6736) |
-| minimum lower bound for `lambda_1` | 7.5846307638015062 (box 629) |
-| maximum upper bound for `lambda_2` | 13.268331793903352 (box 2525) |
+| minimum lower bound for `S` | 3.962e-3 (box 6736) |
+| minimum lower bound for `lambda_1` | 7.584 (box 629) |
+| maximum upper bound for `lambda_2` | 13.269 (box 2525) |
+| minimum lower bound for `lambda_min(M)` | 0.05158622853755157 (box 11044) |
+| minimum lower bound for `lambda_3` | 16 |
+| minimum lower bound for `lambda_3 - 3*pi^2/2` | 1.1955933983659577 |
 | maximum subdivision depth | 3 |
-| maximum worker wall time | 26,049.975498 s (7.24 h) |
+| maximum worker wall time | 25,998.027544 s (7.22 h) |
 
 Every top-level box is certified, the box IDs are exactly `1:13824`, and all
 40 completion markers are present. The checked-in CSV files, summary, hashes,
 and run provenance are the outputs of this hardened, `veigs`-checked run.
-They certify the single-box `S>0` test and the mandatory index-1 `veigs`
-check. The CSV schema does not separately record `M>0` or the inertia of
-`K-(3*pi^2/2)M`; therefore these files alone are not an audit record for the
-additional cluster-contour test stated in the paper.
+They certify the single-box `S>0` test, the mandatory index-1 `veigs` check,
+`lambda_min(M)>0`, and exactly two generalized eigenvalues below 16.
 
 ### Global step
 
@@ -97,7 +98,7 @@ and the pinned `veigs` revision:
 | unverified boxes | 0 |
 | `veigs`-certified boxes | 166,928 |
 | maximum subdivision depth | 30 |
-| minimum certified margin | 2.6545819961754091e-5 |
+| minimum certified margin | >= 2.654e-5 |
 | worker completion | 18/18 |
 | maximum worker wall time | 32,764.912106 s (9.10 h) |
 | complete | true |
