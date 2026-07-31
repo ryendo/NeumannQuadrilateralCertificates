@@ -14,9 +14,6 @@ space on a fixed reference square and has two certified components:
    square; and
 2. a global adaptive box cover outside a smaller seam ball.
 
-Both components use MATLAB, INTLAB, and the verified generalized-eigenvalue
-solver `veigs`. Python is not required.
-
 ## Certified statements
 
 Let `p=(a,b,c,d)` be the paper's quadrilateral parameter and let
@@ -89,20 +86,8 @@ finite cover.
 
 ## Core Libraries & Dependencies
 
-This project relies on specialized libraries for verified numerical
-computation:
-
-1. **MATLAB** R2023b or later (the local computation was tested with R2023b).
-2. **INTLAB**: The fundamental toolbox for rigorous interval arithmetic in
-   MATLAB. INTLAB is not bundled.
-   * **Source:** [http://www.tuhh.de/ti3/intlab/](http://www.tuhh.de/ti3/intlab/)
-     [INTLAB V12 was used for the computation.]
-3. **veigs**: Used for solving generalized matrix eigenvalue problems with
-   rigorous error bounds with the information of indices. `veigs` is not
-   bundled.
-   * **Source:** [https://github.com/yuuka-math/veigs](https://github.com/yuuka-math/veigs)
-     [2025/12/13]
-4. A POSIX shell, required only for the optional launch scripts.
+Both components use MATLAB, INTLAB, and the verified generalized-eigenvalue
+solver `veigs`.
 
 ## Project structure
 
