@@ -104,11 +104,6 @@ computation:
      [2025/12/13]
 4. A POSIX shell, required only for the optional launch scripts.
 
-All non-integer proof constants and decimal bounds are parsed from strings,
-for example `intval('0.5')`, `intval('pi')`, and `intval('1e-12')`. Floating
-point is used only for the non-certified bisection heuristic. Every
-accept/reject proof decision is made from INTLAB interval endpoints.
-
 ## Project structure
 
 ```text
