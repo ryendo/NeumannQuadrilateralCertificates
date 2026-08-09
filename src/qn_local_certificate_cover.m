@@ -1,11 +1,11 @@
 function qn_local_certificate_cover(worker_id, worker_count, face_subdivisions, outdir)
-% Process one worker slice of the local single-box-certificate cover.
-% This is the covering/subdivision loop around alg:single-box-certificate.
+% Process one worker slice of the local Algorithm 1 certificate cover.
+% This is the covering/subdivision loop described in Appendix B.4.
 %
 % PDF notation:
-%   p = t e, e ∈ S³, 0 ≤ t ≤ ρ#                         Sec. 1
-%   B = (E ∩ S³) × T                                    Eq. (42)
-%   S(t,e), S_B                                         Eqs. (13), (67)
+%   p = t e, e ∈ S³                                     (21)
+%   direction charts and radial intervals               (42)-(43)
+%   S(t,e)>0                                            (24), (27)
 %   Single-box certificate returns VERIFIED/UNDECIDED
 %
 % Evaluation:
@@ -52,7 +52,7 @@ end
 function proof = certify_with_subdivision(face_box, depth, radial_grid, remainder_bounds, t_levels, parent_data)
 maxdepth = 6;
 if isempty(parent_data)
-    % Full execution of alg:single-box-certificate.
+    % Full execution of Algorithm 1.
     [res, child_remainder_bounds] = qn_single_box_certificate(face_box, [], radial_grid, remainder_bounds, t_levels);
     proof = summarize_results(res, depth);
     if proof.verified || depth >= maxdepth, return; end
@@ -72,7 +72,7 @@ if isempty(parent_data)
         tasks(end+1,:) = {failed(~sign_only),child_remainder_bounds,[]};
     end
 else
-    % Cheap S-only re-test of the final sign condition S_B, Eq. (67).
+    % Cheap S-only re-test of the final sign condition from (24), (27).
     assert(isfield(parent_data,'veigs_verified') && parent_data.veigs_verified, ...
         'dq2:VEIGSInheritance', ...
         'A sign-only child may reuse only a parent box already verified by veigs.');

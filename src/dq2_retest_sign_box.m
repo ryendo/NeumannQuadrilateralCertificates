@@ -1,12 +1,13 @@
 function results = dq2_retest_sign_box(child_box, radial_grid, t_levels, parent_data)
 % Cheap re-test of S-only failures on a sub-box.
 % This only rechecks the final sign condition inf S_B > 0 from
-% Final sign steps of alg:single-box-certificate; the ancestor already certified
+% the final steps of Algorithm 1; the ancestor already certified
 % Schur/root conditions.
 %
 % PDF notation:
-%   S(t,e) and S_B are Eqs. (13), (67).  Their coefficients come from the
-%   same Vieta data d_2, tilde_d_1, d_0 in Eqs. (59)-(60).
+%   S(t,e) is defined in (24), and positivity is required in (27).
+%   Its coefficients come from the Vieta data d_2, tilde_d_1, d_0 in
+%   (33)-(34), enclosed by (38) and optionally refined by (41).
 %
 % Evaluation:
 %   Reuses ancestor INTLAB interval data for all non-S checks.  On a child
@@ -43,7 +44,7 @@ m = size(radial_grid, 2) - 1;
 results = repmat(struct('ok',true,'infS',inf,'reason','skip'), m, 1);
 for k = t_levels(:)'
     t = dq2_interval_hull(radial_grid(k), radial_grid(k+1));
-    [~, d2_P, ~, S_core_center_data] = qn_single_box_quantities(CKP, CMP, CbP, EK, EM, Eb, qP, t, FR); % centered S_B data, Eq. (67)
+    [~, d2_P, ~, S_core_center_data] = qn_single_box_quantities(CKP, CMP, CbP, EK, EM, Eb, qP, t, FR); % centered [S]_B data from (24), (38)
     if isempty(S_core_center_data) || isempty(d2_P), results(k).ok = false; results(k).infS = -inf; results(k).reason = 'cinv'; continue; end
     % centered form: point value+gradient at child center, ancestor Hessian
     S_core_hessian = parent_data.S_core_hessian{k};
@@ -60,7 +61,7 @@ for k = t_levels(:)'
         end
     end
     S_core_child = S_centered + quadratic_part/2;
-    S_B_child = S_core_child + midrad(0, parent_data.S_padding(k)); % final sign test, Eq. (67)
+    S_B_child = S_core_child + midrad(0, parent_data.S_padding(k)); % final sign test from (24), (27)
     results(k).infS = inf(S_B_child);
     results(k).ok = inf(S_B_child) > 0;
     if ~results(k).ok, results(k).reason = 'S'; end

@@ -33,8 +33,9 @@ the DQ2 computation certifies
 f_2(p) > pi^(-2),       0 < ||p|| <= rho_local.
 ```
 
-Equivalently, the final interval sign test proves `S(t,e)>0` on a finite cover
-of `S^3 x (0,rho_local]`, where `p=t e`.
+This is equation (20) of the paper. Equivalently, the final interval sign test
+proves equation (27), `S(t,e)>0`, on a finite cover of
+`S^3 x (0,rho_local]`, where `p=t e` as in equation (21).
 
 The certified results reported in Appendix B, Table 4 of the paper are:
 
@@ -62,7 +63,8 @@ for p in P_K \ B(0,rho_seam),
 rho_seam = rho#/2 = 1616/(27*pi^6) approximately 0.062256.
 ```
 
-Because the trial space is contained in the zero-mean Sobolev space,
+This is equation (16) of the paper. Because the trial space is contained in
+the zero-mean Sobolev space,
 `lambda_1(p) >= mu_1(Q_p)`, so the same strict inequality follows for the
 first nonzero Neumann eigenvalue. The local and global regions overlap on
 `rho#/2 <= ||p|| <= rho#`.
@@ -70,7 +72,7 @@ first nonzero Neumann eigenvalue. The local and global regions overlap on
 The source Python code called the seam `RHO_SHARP`; this repository uses the
 paper-aligned names `rho_local` and `rho_seam` to remove that ambiguity.
 
-The certified results reported in Appendix C, Table 5 of the paper are:
+The certified output reported in Appendix C, equation (58) of the paper is:
 
 | quantity | certified saved value |
 |---|---:|
@@ -95,8 +97,8 @@ solver `veigs`.
 .
 ├── QuadrilateralProofRunner.m       unified entry point
 ├── src/                             all proof implementation
-│   ├── qn_single_box_certificate.m  paper alg:single-box-certificate
-│   ├── qn_global_certified_cover.m  paper alg:global-certified-cover
+│   ├── qn_single_box_certificate.m  paper Algorithm 1
+│   ├── qn_global_certified_cover.m  paper Appendix C finite cover
 │   ├── qn_*.m                       certificate orchestration/shared code
 │   └── dq2_*.m                      low-level local DQ2 kernels
 ├── data/taylor_coefficients.mat
@@ -233,9 +235,11 @@ Q(B) = sup_B |Q_p|.
 For every retained box, `veigs(K(B),M(B),1,'sa')` returns a rigorous interval
 for the generalized eigenvalue with index 1. A box is accepted only when the
 returned index data contains `1` and the upper endpoint proves
-`sup(Q(B))*sup(lambda_1(B)) < inf(pi^2)`. Floating center eigensolves are used
-only by the source slack-driven bisection heuristic. `qn_interval_box`
-outward-rounds each child without imposing a minimum box width.
+`sup(Q(B))*sup(lambda_1(B)) < inf(pi^2)`, implementing the conditions in
+equation (52) and the conclusion in equation (53). Floating center
+eigensolves are used only by the source slack-driven bisection heuristic.
+`qn_interval_box` outward-rounds each child without imposing a minimum box
+width.
 
 ### Boundary-regular stiffness assembly
 
@@ -277,14 +281,14 @@ These timing values are diagnostics, not proof inputs.
 
 | paper item | implementation |
 |---|---|
-| Algorithm `alg:single-box-certificate` | `src/qn_single_box_certificate.m` |
+| Algorithm 1 (Appendix B.4) | `src/qn_single_box_certificate.m` |
 | local cover and subdivision | `src/qn_local_certificate_cover.m` |
 | local Taylor remainder | `src/dq2_bound_taylor_remainder_vectorized.m` |
 | verified index-1 generalized eigenvalue | `src/qn_veigs_smallest.m` |
-| Proposition `p:box-bound` | `src/qn_certify_box.m` |
+| Proposition 6.1 | `src/qn_certify_box.m` |
 | interval pencil `K(B),M(B)` | `src/qn_km_enclosure.m` |
 | GL truncation enclosure | `src/qn_gl_pad.m` |
-| Algorithm `alg:global-certified-cover` | `src/qn_global_certified_cover.m` |
+| Appendix C finite cover, Theorem 6.2 | `src/qn_global_certified_cover.m` |
 | `P_K`, `P_C`, seam and `D_4` logic | `src/qn_*box*.m`, `src/qn_global_constants.m` |
 
 ## Trust boundary
