@@ -1,22 +1,22 @@
 {
-  "verified": 166928,
-  "discarded": 25285,
-  "bisected": 192195,
+  "verified": 117083,
+  "discarded": 15222,
+  "bisected": 132289,
   "unverified": 0,
-  "veigs_certified": 166928,
-  "initial_retained": 18,
-  "max_depth": 30,
-  "min_certified_margin": 2.6545819961754091E-5,
+  "veigs_certified": 117083,
+  "initial_retained": 16,
+  "max_depth": 29,
+  "min_certified_margin": 8.0698658297961856E-6,
   "min_margin_at": [
-    -0.0021595341207745018,
-    0.0899416345342844,
-    -0.064244024667346,
-    0.0068793202960470423
+    0.0010797670603872509,
+    0.0610318234339787,
+    -0.0032122012333673,
+    -0.00085991503700588029
   ],
-  "wall_seconds_max": 32764.912106,
+  "wall_seconds_max": 14240.679922,
   "worker_count": 18,
   "n_init": 3,
-  "initial_retained_all": 18,
+  "initial_retained_all": 16,
   "rho_seam": 0.062255590401707306,
   "complete": true
 }

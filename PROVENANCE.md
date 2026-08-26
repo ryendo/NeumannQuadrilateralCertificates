@@ -1,140 +1,65 @@
-# Source provenance
+# Source and certificate provenance
 
-The local certificate was imported from `ryendo/dq2-quadrilateral-certificate`
-at commit `6d44991af03102a2338e7af69c67767a32e55178` (2026-06-18). Its original
-48-worker result was copied byte-for-byte before the paths were reorganized;
-Git history retains that superseded output.
+## Verified numerical dependencies
 
-On 2026-07-16 the integrated copy was hardened in two proof-critical places:
-Taylor-remainder bounds from the spatial cells are now accumulated as INTLAB
-intervals before extracting their upper endpoints, and the Gershgorin row
-radii used for `M(te)>0` are summed in interval arithmetic.  The exact 2-by-2
-root-identity refinement already used by the imported code is now exposed in
-the result diagnostics and documented as a proved refinement of
-`alg:single-box-certificate` in the paper.
-
-The global MATLAB/INTLAB implementation is a line-by-line mathematical port of
-the local `quad_neumann_global` Python/Arb extract supplied with the paper on
-2026-07-15. Important source SHA-256 values are:
-
-| source | SHA-256 |
-|---|---|
-| `geometry.py` | `7faf190ed03dc732e7e36b2767d1b559bdb2fc209ef0399eb26e87b3b005649b` |
-| `global_step.py` | `bce0b526324e64db0bd07b4805428d9d24f361003600b6aeac88880e7215eeca` |
-| `pencil.py` | `7d672d6daae302a4ef163047f9817c3a5dd199da35cf856b9b2143f78bbffcb9` |
-| `gl_pad_v2.py` | `9b3d39f751c1db2c9b0455f4f7303f22a14498c3f5585e47689c313ef180f8df` |
-| `quad_truncation.py` | `e658c59332007136e10c702404f95a5a15b9e155bf2e9e1c09ab9cfca7e0e0f4` |
-
-The reference layout was `ryendo/DirichletSimplicityClustered` at commit
-`9331995405ac7fdbcb97e2a9a3ab26c0c9f6bf2b` (2025-12-14).
-
-## Verified generalized eigensolver
-
-Both certificate paths use the MIT-licensed
+Both certificate paths use MATLAB R2023b, INTLAB V12, and the MIT-licensed
 [`yuuka-math/veigs`](https://github.com/yuuka-math/veigs) package at commit
-`6556d39a0d9819bb172d232062b698aa76e420f6` (2025-12-15). The repository does
-not bundle the dependency; `VEIGS_ROOT` or the second `qn_setup` argument must
-point to that exact checkout.
+`6556d39a0d9819bb172d232062b698aa76e420f6`. The dependency is not bundled;
+set `VEIGS_ROOT`, or pass its checkout as the second argument to `qn_setup`.
 
-The wrapper `src/qn_veigs_indices.m` symmetrizes the interval pencil and targets
-each requested index separately. Index 1 uses the smallest-real target; an
-interior index uses its midpoint eigenvalue only to select the target, after
-which the certified index data must contain that index. If the high-level
-routine cannot separate a small interval pencil, its verified `veig` routine
-is used. The local path targets indices 1 and 3, intersects the index-1
-enclosure with the Schur enclosure, and requires the index-3 lower endpoint to
-exceed 16. The global path targets index 1.
+`qn_veigs_indices` symmetrizes each interval pencil and targets every requested
+index separately. It accepts a result only when the certified index data
+contains that index. If `veigs` cannot separate a target, the wrapper calls
+the verified small-pencil `veig` routine from the same pinned package. The
+local calculation targets indices 1 and 3 and requires
+`inf(lambda_3) > 16`; the global calculation targets index 1.
 
-## Run-of-record computations (2026-07-29--30)
+## Run of record (2026-08-26)
 
-The last completed certificate runs were computed on liulab with INTLAB V12
-and `veigs` commit `6556d39a0d9819bb172d232062b698aa76e420f6`.
+The checked-in results were computed on `liulab-hpc2023` from source commit
+`b9944f600ba63bed3ddbbde9890febebb613b3ac`.
 
-| certificate | source commit | workers | completion | principal certified statistic |
-|---|---|---:|---|---:|
-| local | `2d4d4ce4d40202614f98107f3a284c632ce05c13` | 40 | 13,824/13,824 boxes, 0 failures | `min S = 0.0039623492860414444` |
-| global | `7a0d1b42e0c9660fd66a54feca2e38555a940e34` | 18 | 18/18 forests, 0 unverified | `min margin = 2.6545819961754091e-5` |
+| certificate | workers | completion | certified minimum |
+|---|---:|---|---:|
+| local | 60 | 13,824/13,824 top-level boxes, 0 failures | `S >= 0.0044848550155087707` |
+| global | 18 | 16/16 retained roots, 0 unverified boxes | margin `>= 8.0698658297961856e-6` |
 
-The differing source commits in the table reflect changes confined to the
-local certificate and its regression tests; the global implementation is
-unchanged between them.
-`results/local/` and `results/global/` contain the corresponding summaries,
-per-worker outputs, SHA-256 manifests, and `RUN_PROVENANCE.txt` records.
+The local audit found exactly the box IDs `1:13824`, without duplicates,
+all 60 completion markers, and the current ten-column schema. It independently
+recomputed the saved extrema, including
+`lambda_min(M) >= 0.052100929203335616` and
+`lambda_3 >= 17.834653422811055`.
 
-The local audit found exactly the box IDs `1:13824`, no duplicates, complete
-worker markers, and no failed boxes. The global audit found exactly worker IDs
-`1:18`; every worker reports `complete=true`, and recomputing the sums and
-extrema from the worker JSON files reproduces `summary.json`. In particular,
-the global minimum margin is strictly positive.
+The global audit found worker IDs `1:18`, recomputed every sum and extremum in
+`summary.json`, and checked `complete=true` and `unverified=0` for every
+worker. Worker 12 was accelerated by fixed longest-side presplitting. Its 50
+selected dyadic subcovers are disjoint, cover the retained root exactly, and
+each satisfies `verified + discarded = bisected + 1`. The 49 fixed
+bisections are included in the reported count. The component summaries and
+the 77-line execution driver are retained as `parallel_parts_012.json` and
+`parallel_driver_012.m` in `results/global/`.
 
-The checked-in local output predates the current index-3 extension. It
-certifies the then-implemented single-box `S>0` test and index-1 `veigs` check,
-but has no saved Gershgorin mass lower bound or index-3 enclosure. It therefore
-must not be cited as output of the current local algorithm. The revised CSV
-schema adds `mass_matrix_lower`, `lambda3_lower`, and
-`lambda3_minus_3pi2_over2_lower`; a full-cover rerun is pending.
-The paper's displayed mass bound `0.051` and third-eigenvalue gap `1.195`
-belong to the previous direct interval-inertia route. They are retained as
-comparison values, not attributed to the pending index-3 `veigs` run.
+The per-certificate `RUN_PROVENANCE.txt` files record the exact environment,
+and the `SHA256SUMS` manifests cover all saved outputs.
 
-The older local CSV files and completed pre-`veigs` global calculation were
-generated before the present eigensolver became mandatory. They are retained
-in Git history only and are not used for the current numerical claims.
+## Mathematical source alignment
 
-## Historical global-source gap
+The local Taylor coefficients originated in
+`ryendo/dq2-quadrilateral-certificate` commit
+`6d44991af03102a2338e7af69c67767a32e55178`. The current implementation keeps
+Taylor-remainder accumulation and Gershgorin radii in interval arithmetic and
+uses the exact two-root identity described in the appendix.
 
-The supplied `quad_neumann_global/README.md` attributes the paper's global
-counts to a development driver named `eigbound_shrink.py` in a parent
-`quad_neumann_release/` tree. It also refers to `GLOBAL_STEP_AUDIT.md` and a
-`python_flint_audit/` directory. None of those files is present in the supplied
-extract, elsewhere in the paper workspace, or in the accessible GitHub source.
-
-This distinction is observable in the cover itself: the supplied
-`run_cover(n_init=3)` retains 18 root boxes, whereas the paper reports 74 roots
-through `1420 + 337 - 1683 = 74`. On liulab, a faithful MATLAB/INTLAB run of the
-18-root extract reached depth 60 with `qn:Jacobian` on boxes approaching the
-degenerate boundary of `P_K`. That historical run was stopped and no summary
-was accepted. The boundary-regular representation below removed the artificial
-singularity, and the current 18-worker `veigs` run completed with zero
-unverified boxes.
-
-## Algebraically regular stiffness representation
-
-The Python source evaluates the generic inverse-metric pullback of the
-stiffness form and therefore introduces a factor `1/J`. For the paper's actual
-trial space this factor is removable: the functions are restrictions of fixed
-ambient trigonometric functions, so
+The global implementation is a mathematical port of the supplied
+`quad_neumann_global` code. For the fixed ambient trigonometric trial space,
 
 ```text
-grad_ref(psi o Phi) = DPhi' grad_x(psi)
+grad_ref(psi o Phi) = DPhi' grad_x(psi),
 ```
 
-and the inverse metric cancels to give `(grad_x psi_i . grad_x psi_j) J`.
-The MATLAB/INTLAB code evaluates this algebraically identical expression
-directly. This is not a change to the trial space, Rayleigh--Ritz pencil, box
-test, or subdivision algorithm. It removes the source representation's
-artificial pole at `c_i=J(corner)=0` and permits an entire-integrand GL
-remainder bound on triangle faces.
-
-The boundary-regular smoke test encloses the analytic square pencil, an
-interior pencil, and a parameter box crossing the genuine triangle face
-`c_3=0`. In the current source the interior and boundary boxes must also be
-certified by `veigs` with returned index information containing `1`.
-
-Porting rules:
-
-- The global cover geometry and D4 representative rule are kept. The former
-  1-vector and 2-vector acceptance tests are replaced by the verified index-1
-  upper bound from `veigs`. Longest-side bisection is used throughout, directly
-  enforcing the diameter-to-zero premise of the termination proof.
-- Arb intervals are replaced by INTLAB `intval` intervals.
-- Decimal proof constants are constructed with `intval('...')`.
-- The pencil uses a centered mean-value enclosure. INTLAB automatic gradients
-  evaluate the common exact integrand kernel over the complete parameter box,
-  so `f(c)+Df(B)(B-c)` includes all parameter dependence directly and needs no
-  Taylor remainder. Bernstein-ellipse Gauss--Legendre truncation
-  padding is added to both the center values and the parameter gradients in
-  the mean-value form. The spatial rule uses order 20 because the
-  source kernel itself notes that global/far boxes require order at least about
-  20; its default call left the order at 12, whose non-vanishing truncation pad
-  cannot certify skewed interior points.
+so the inverse metric cancels and the stiffness integrand is evaluated as
+`(grad_x psi_i . grad_x psi_j) J`. This algebraically regular form removes the
+source representation's artificial `1/J` pole without changing the trial
+space, Rayleigh--Ritz pencil, box test, or certified conclusion. The interval
+assembly uses the common exact kernel, INTLAB automatic gradients, and
+Bernstein-ellipse Gauss--Legendre truncation padding.

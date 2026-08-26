@@ -37,32 +37,25 @@ This is equation (20) of the paper. Equivalently, the final interval sign test
 proves equation (27), `S(t,e)>0`, on a finite cover of
 `S^3 x (0,rho_local]`, where `p=t e` as in equation (21).
 
-The last completed local run reported the following values:
+The checked-in full-cover run reports:
 
 | quantity | certified saved value |
 |---|---:|
-| initial products / maximum depth | 13,824 × 9 / 3 |
-| certified lower bound for `S` | 0.0039623492860414444 |
-| certified bounds for (`lambda_1`, `lambda_2`) | `lambda_1 >= 7.584`, `lambda_2 <= 13.269` |
+| initial products / maximum depth | 13,824 × 9 / 1 |
+| certified lower bound for `S` | 0.0044848550155087707 |
+| certified bounds for (`lambda_1`, `lambda_2`) | `lambda_1 >= 7.6300046469977758`, `lambda_2 <= 13.267374191855003` |
+| certified lower bound for `lambda_min(M)` | 0.052100929203335616 |
+| certified lower bound for `lambda_3` | 17.834653422811055 |
+| certified lower bound for `lambda_3-3*pi^2/2` | 3.0302468211770126 |
 | outcome | verified on every final box |
 
-The numerical realization in Section 5 records the more precise cluster
-bounds `lambda_1 >= 7.5846307638015062` and
-`lambda_2 <= 13.268331793903352`. The checked-in CSV files and summary are the
-immutable machine-readable output of that run: they cover the single-box
-`S>0` test and the index-1 `veigs` check.
-
-The current source targets generalized-eigenvalue indices 1 and 3 separately
-with `veigs`, requires the index-3 lower bound to exceed 16, and records that
-enclosure and the Gershgorin lower bound for `M`. If `veigs` cannot separate a
-small interval pencil, the verified `veig` routine from the same pinned package
-is used. A new full local run has not yet been generated, so the checked-in
-local CSV files are classified as a legacy schema.
-
-The paper retains `0.051` for the mass lower bound and `1.195` for
-`lambda_3-3*pi^2/2` as results of the previous interval-`LDL^T` route. Those
-two values are comparison data: they are neither fields in the checked-in
-legacy CSV files nor claimed outputs of the pending index-3 `veigs` rerun.
+The calculation targets generalized-eigenvalue indices 1 and 3 separately,
+accepts only certified index data containing the requested index, and requires
+the index-3 lower bound to exceed 16. If the high-level `veigs` call cannot
+separate a small interval pencil, the verified `veig` routine from the same
+pinned package is used. The CSV files record both enclosures and the
+Gershgorin lower bound for `M`; `summary.json` independently checks the saved
+cover and all completion markers.
 
 ### Global step
 
@@ -88,15 +81,17 @@ The certified output reported in Appendix C, equation (58) of the paper is:
 
 | quantity | certified saved value |
 |---|---:|
-| initial boxes / maximum depth | 18 / 30 |
-| accepted / discarded / unresolved boxes | 166,928 / 25,285 / 0 |
-| bisections | 192,195 |
-| `Delta_*` | 2.6545819961754091e-5 |
+| initial boxes / maximum depth | 16 / 29 |
+| accepted / discarded / unresolved boxes | 117,083 / 15,222 / 0 |
+| bisections | 132,289 |
+| `Delta_*` | 8.0698658297961856e-6 |
 | conclusion | `|Q_p| lambda_1(p) < pi^2` on `Omega_II` |
 
 Every accepted box is certified by `veigs`, and no box is left unresolved.
 The checked-in worker JSON files provide the machine-readable output for this
-finite cover.
+finite cover. Seventeen roots used the standard worker directly; worker 12 was
+evaluated as 50 disjoint dyadic subcovers in parallel, with all fixed
+longest-side bisections included in the totals. See `results/global/README.md`.
 
 ## Core Libraries & Dependencies
 
@@ -115,8 +110,8 @@ solver `veigs`.
 │   └── dq2_*.m                      low-level local DQ2 kernels
 ├── data/taylor_coefficients.mat
 ├── results/
-│   ├── local/                       last completed local run (legacy schema)
-│   └── global/                      current global veigs run
+│   ├── local/                       current targeted-index run
+│   └── global/                      current index-1 veigs run
 ├── tests/                           smoke and regression tests
 ├── scripts/                         shell launchers
 └── PROVENANCE.md
@@ -140,10 +135,9 @@ report = qn_smoke_test(repo_root);
 ```
 
 The smoke test checks that the certified global pencil enclosure contains the
-floating-point center value, exercises a representative per-box test (including
-the index-3 `veigs` bound), and classifies the saved local CSV schema. Until the
-full local rerun is installed, the saved files are expected to pass their
-legacy checks while not being marked current-algorithm verified.
+floating-point center value, exercises representative global and local
+per-box tests (including the index-3 bound), and verifies the saved local
+certificate summary.
 
 The focused local proof-path regression test additionally exercises rigorous
 Taylor-remainder accumulation, the coarse single-box bound, and the exact
@@ -174,15 +168,12 @@ export VEIGS_ROOT=/path/to/veigs
 addpath('src');
 repo_root = qn_setup('/path/to/Intlab_V12','/path/to/veigs');
 summary = qn_summarize_local_results(fullfile(repo_root,'results','local'));
-assert(summary.legacy_certificate_verified)
-assert(~summary.current_algorithm_fields_present)
-assert(~summary.verified)
+assert(summary.verified)
 ```
 
-The assertions above describe the checked-in pre-index-3 files. For a newly
-generated current-schema directory, `verified=true` additionally requires a
-positive saved Gershgorin mass bound, a verified index-3 lower bound greater
-than 16, and a positive lower bound for `lambda_3-3*pi^2/2`. The proof decision
+`verified=true` requires complete box IDs and worker markers, a positive saved
+Gershgorin mass bound, a verified index-3 lower bound greater than 16, and
+positive lower bounds for both `S` and `lambda_3-3*pi^2/2`. The proof decision
 is made in INTLAB before decimal endpoints are written to CSV.
 
 ## Recompute the local certificate
