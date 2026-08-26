@@ -25,19 +25,26 @@ rho = 3232/(27*PI^6);                         % rho# in Sec. 1
 tmax = intval(sup(rho))*intval('1.000000000001');
 radial_grid = tmax * (intval([0 2 4 6 8 10 12 14 15 16])/intval(16)); % T intervals, refined near ρ#
 fid = fopen(sprintf('%s/res_%03d.csv', outdir, worker_id), 'w');
-fprintf(fid, 'box_id,ok,inf_S,max_subdivision_depth,elapsed_seconds,lambda1_lower,lambda2_upper\n');
+fprintf(fid, ['box_id,ok,inf_S,max_subdivision_depth,elapsed_seconds,' ...
+    'lambda1_lower,lambda2_upper,mass_matrix_lower,lambda3_lower,' ...
+    'lambda3_minus_3pi2_over2_lower\n']);
 face_box_table = face_boxes(face_subdivisions); % E boxes for B in Eq. (42)
 total_boxes = size(face_box_table, 1);
 tstart = tic;
-failed_boxes = 0; worst_lower_S = inf;
+failed_boxes = 0; worst_lower_S = inf; worst_mass_lower = inf;
+worst_lambda3_lower = inf; worst_lambda3_gap_lower = inf;
 for box_id = worker_id:worker_count:total_boxes
     face_box = face_box_table(box_id, :);       % one E; radial_grid supplies T
     proof = certify_with_subdivision(face_box, 0, radial_grid, [], [], []);
     worst_lower_S = min(worst_lower_S, proof.lower_S);
+    worst_mass_lower = min(worst_mass_lower,proof.mass_lower);
+    worst_lambda3_lower = min(worst_lambda3_lower,proof.lambda3_lower);
+    worst_lambda3_gap_lower = min(worst_lambda3_gap_lower,proof.lambda3_gap_lower);
     if ~proof.verified, failed_boxes = failed_boxes + 1; end
-    fprintf(fid, '%d,%d,%.17e,%d,%.17e,%.17e,%.17e\n', ...
+    fprintf(fid, '%d,%d,%.17e,%d,%.17e,%.17e,%.17e,%.17e,%.17e,%.17e\n', ...
         box_id, proof.verified, proof.lower_S, proof.depth, toc(tstart), ...
-        proof.lambda1_lower, proof.lambda2_upper);
+        proof.lambda1_lower, proof.lambda2_upper, proof.mass_lower, ...
+        proof.lambda3_lower, proof.lambda3_gap_lower);
     if mod(box_id, 40*worker_count) < worker_count
         fprintf('proc %d: box %d/%d worstS=%.3f fails=%d (%.0fs)\n', ...
                 worker_id, box_id, total_boxes, worst_lower_S, failed_boxes, toc(tstart));
@@ -45,7 +52,10 @@ for box_id = worker_id:worker_count:total_boxes
 end
 fclose(fid);
 fid2 = fopen(sprintf('%s/done_%03d.txt', outdir, worker_id), 'w');
-fprintf(fid2, 'worstS=%.17e nfail=%d time=%.17e\n', worst_lower_S, failed_boxes, toc(tstart));
+fprintf(fid2, ['worstS=%.17e worstMass=%.17e worstLambda3=%.17e ' ...
+    'worstLambda3Gap=%.17e nfail=%d time=%.17e\n'],worst_lower_S, ...
+    worst_mass_lower,worst_lambda3_lower,worst_lambda3_gap_lower, ...
+    failed_boxes,toc(tstart));
 fclose(fid2);
 end
 
@@ -62,7 +72,10 @@ if isempty(parent_data)
     sign_levels = failed(sign_only);
     child_parent_data = struct('REM',child_remainder_bounds, ...
         'S_padding',[res.S_padding], ...
-        'veigs_verified',all([res(sign_levels).veigs_verified]));
+        'veigs_verified',all([res(sign_levels).veigs_verified]), ...
+        'mass_verified',all([res(sign_levels).mass_lower]>0), ...
+        'lambda3_verified',all(arrayfun(@(r) ~isempty(r.lam3) && r.lam3(1)>16, ...
+            res(sign_levels))));
     child_parent_data.S_core_hessian = {res.S_core_hessian};
     tasks = cell(0,3);
     if any(sign_only)
@@ -73,9 +86,12 @@ if isempty(parent_data)
     end
 else
     % Cheap S-only re-test of the final sign condition from (24), (27).
-    assert(isfield(parent_data,'veigs_verified') && parent_data.veigs_verified, ...
+    assert(isfield(parent_data,'veigs_verified') && parent_data.veigs_verified && ...
+        isfield(parent_data,'mass_verified') && parent_data.mass_verified && ...
+        isfield(parent_data,'lambda3_verified') && parent_data.lambda3_verified, ...
         'dq2:VEIGSInheritance', ...
-        'A sign-only child may reuse only a parent box already verified by veigs.');
+        ['A sign-only child may reuse only a parent box with certified mass ' ...
+        'positivity and veigs indices 1 and 3.']);
     res = dq2_retest_sign_box(face_box, radial_grid, t_levels, parent_data);
     proof = summarize_results(res, depth);
     if proof.verified || depth >= maxdepth, return; end
@@ -98,12 +114,19 @@ ok=[res.ok];
 lower=min([res(ok).infS]);
 if isempty(lower), lower=inf; end
 proof=struct('verified',all(ok),'lower_S',lower,'depth',depth, ...
-    'lambda1_lower',inf,'lambda2_upper',-inf);
+    'lambda1_lower',inf,'lambda2_upper',-inf,'mass_lower',inf, ...
+    'lambda3_lower',inf,'lambda3_gap_lower',inf);
 if ~isfield(res,'lam1'), return; end
 for k=1:numel(res)
     if ~isempty(res(k).lam1)
         proof.lambda1_lower=min(proof.lambda1_lower,res(k).lam1(1));
         proof.lambda2_upper=max(proof.lambda2_upper,res(k).lam2(2));
+    end
+    if isfield(res,'veigs_verified') && res(k).veigs_verified && ...
+            isfield(res,'lam3') && ~isempty(res(k).lam3)
+        proof.mass_lower=min(proof.mass_lower,res(k).mass_lower);
+        proof.lambda3_lower=min(proof.lambda3_lower,res(k).lam3(1));
+        proof.lambda3_gap_lower=min(proof.lambda3_gap_lower,res(k).lambda3_gap_lower);
     end
 end
 end
@@ -114,6 +137,9 @@ proof.lower_S=min(proof.lower_S,child.lower_S);
 proof.depth=max(proof.depth,child.depth);
 proof.lambda1_lower=min(proof.lambda1_lower,child.lambda1_lower);
 proof.lambda2_upper=max(proof.lambda2_upper,child.lambda2_upper);
+proof.mass_lower=min(proof.mass_lower,child.mass_lower);
+proof.lambda3_lower=min(proof.lambda3_lower,child.lambda3_lower);
+proof.lambda3_gap_lower=min(proof.lambda3_gap_lower,child.lambda3_gap_lower);
 end
 
 function child_boxes = subdivide_face_box(parent_box)

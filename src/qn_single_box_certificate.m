@@ -21,8 +21,10 @@ function [results, REM] = qn_single_box_certificate(face_box, m, radial_grid, pa
 %   S_core_B, S_padding       -> central part and error radius of [S]_B
 %                                obtained from (24) and (38)
 %   L_B, P_B                  -> enclosures in (38), refined by (41)
-%   S_B                       -> final enclosure in Algorithm 1, line 9
+%   S_B                       -> final [S]_B enclosure in Algorithm 1
 %   E_B                       -> root-error radius tη/β used after (39)
+%   mass_lower                -> Gershgorin lower bound for lambda_min(M(te))
+%   veigs_lambda1/lambda3     -> verified index-1/index-3 enclosures
 %
 % Evaluation:
 %   All rigorous quantities are INTLAB intervals.  Taylor coefficients of
@@ -78,30 +80,38 @@ end
 [CKP, CMP, CbP] = dq2_evaluate_taylor_coefficients_vectorized(TC, EP(1), EP(2), EP(3), EP(4)); % center value/gradient
 [CKG, CMG, CbG] = dq2_evaluate_taylor_coefficients_vectorized(TC, EG(1), EG(2), EG(3), EG(4)); % Hessian enclosure over box
 
-qI = sqr(EI(1)) + sqr(EI(4));                 % e_a^2+e_d^2 in (24)
-qP = EP(1)*EP(1) + EP(4)*EP(4);
-qG = EG(1)*EG(1) + EG(4)*EG(4);
+ad2I = sqr(EI(1)) + sqr(EI(4));               % e_a^2+e_d^2 in (24), not the area q(p)
+ad2P = EP(1)*EP(1) + EP(4)*EP(4);
+ad2G = EG(1)*EG(1) + EG(4)*EG(4);
 
 % X0 structural quantities (interval chain)
 KM1 = CKI{2} - PI2*CMI{2};                  % D(K-pi^2 M)(0)[e], symbolic coefficients -> interval
 X0I = V5'*KM1*V5;                            % E_0 block of the first-order pencil
 
 results = repmat(struct('ok',true,'infS',inf,'reason','skip','lam1',[],'lam2',[], ...
+                        'lam3',[],'mass_lower',-inf,'lambda3_gap_lower',-inf, ...
                         'S_interval',[],'L_interval',[],'E_B',0,'nu_window',[], ...
                         'S_padding',0,'S_core_hessian',[], ...
                         'root_identity_used',false,'coarse_infS',-inf, ...
                         'root_identity_gain',0,'veigs_verified',true, ...
-                        'veigs_lambda1',[],'veigs_indices',[]), m, 1);
+                        'veigs_lambda1',[],'veigs_lambda3',[], ...
+                        'veigs_indices',[]), m, 1);
 for k = t_levels(:)'
     results(k).ok = false; results(k).infS = -inf; results(k).reason = '';
     results(k).veigs_verified = false;
     t = dq2_interval_hull(radial_edges(k), radial_edges(k+1));
     % -- Single-box certificate: interval blocks and Schur data -----------
-    [d1_over_t_I, d2_I, d0_I, S_core_I, schur] = qn_single_box_quantities(CKI, CMI, CbI, EK, EM, Eb, qI, t, FR); % whole-box interval evaluation
+    [d1_over_t_I, d2_I, d0_I, S_core_I, schur] = qn_single_box_quantities(CKI, CMI, CbI, EK, EM, Eb, ad2I, t, FR); % whole-box interval evaluation
     if isempty(schur), results(k).reason = 'B0inv'; continue; end
+    Mte = M0 + t*schur.DtM;                   % M(te), positive-definite condition in (36)
+    Kte = K0 + t*schur.DtK;                   % K(te), from the same Taylor quotient
+    mass_lower = gershgorin_lower_bound(Mte);
+    if ~(isfinite(mass_lower) && mass_lower > 0)
+        results(k).reason = 'W1'; continue;
+    end
     % ---------- centered chains (hessian at center / over box) ----------
-    [d1_over_t_P, d2_P, d0_P, S_core_P] = qn_single_box_quantities(CKP, CMP, CbP, EK, EM, Eb, qP, t, FR); % center Hessian object
-    [d1_over_t_G, d2_G, d0_G, S_core_G] = qn_single_box_quantities(CKG, CMG, CbG, EK, EM, Eb, qG, t, FR); % box Hessian enclosure
+    [d1_over_t_P, d2_P, d0_P, S_core_P] = qn_single_box_quantities(CKP, CMP, CbP, EK, EM, Eb, ad2P, t, FR); % center Hessian object
+    [d1_over_t_G, d2_G, d0_G, S_core_G] = qn_single_box_quantities(CKG, CMG, CbG, EK, EM, Eb, ad2G, t, FR); % box Hessian enclosure
     if isempty(d1_over_t_P) || isempty(d1_over_t_G), results(k).reason = 'cinv'; continue; end
     dx = xI - xc;
     d1_over_t_B = intersect(centered_hessian_interval(d1_over_t_P, d1_over_t_G, dx), d1_over_t_I); % d̃₁, (33)-(34)
@@ -124,27 +134,33 @@ for k = t_levels(:)'
     nw = 6;   % window subdivisions for (C2)/(C5)/kappa2
     L1 = -schur.Nm + schur.C0*schur.B0i*schur.MW;
     nrmL1 = spnorm(L1);
+    window_closed = false;
     for it = 1:3
         I_nu = padded_hull(mu1, mu2, pad);
-        [kappa2, ok] = schur_residual_norm_bound(schur, t, I_nu, nw, nrmL1); % interval bound for ||F_t - Fhat_t||/t
-        if ~ok, reason = 'BWinv'; break; end
+        [kappa2, ok, reason] = schur_residual_norm_bound(schur, t, I_nu, nw, nrmL1); % interval bound for ||F_t - Fhat_t||/t
+        if ~ok, break; end
         eta = upper_eta(I_nu, t, kappa2);       % eta in (37)
         E_B = upper_ebar(t, eta, beta);       % root-error radius t*eta/beta after (39)
-        if upper_plus_margin(E_B) <= pad, break; end
+        if upper_plus_margin(E_B) <= pad
+            window_closed = true;
+            break
+        end
         pad = upper_scaled_margin(E_B);
     end
     if ~ok, results(k).reason = reason; continue; end
+    if ~window_closed, results(k).reason = 'window'; continue; end
     % bootstrap: roots now known to lie in hull(mu1,mu2) +/- E_B;
     % re-evaluate the residual constants on that tighter range
     for bs = 1:2
         I_nu_tight = intersect(padded_hull(mu1, mu2, E_B), I_nu);
-        [kapr, ok] = schur_residual_norm_bound(schur, t, I_nu_tight, nw, nrmL1);
+        [kapr, ok, reason] = schur_residual_norm_bound(schur, t, I_nu_tight, nw, nrmL1);
         if ~ok, break; end
         eta_n = upper_eta(I_nu_tight, t, kapr);
         ebar_n = upper_ebar(t, eta_n, beta);
         if ebar_n >= E_B, break; end
         eta = eta_n; E_B = ebar_n;
     end
+    if ~ok, results(k).reason = reason; continue; end
     ok = true;
     Xfull = schur.X0 + t*schur.Xt;            % E_0 block of the exact Schur pencil, interval
     wedges = interval_edges(I_nu, nw);
@@ -164,18 +180,6 @@ for k = t_levels(:)'
     F_at_nu_plus = schur_matrix_at_nu(Xfull, schur.Y, schur.C0, schur.B0, schur.Nm, schur.MW, t, intval(sup(I_nu))); % F_t(nu_+), (36)
     if ~(inf(F_at_nu_minus(1,1)) > 0 && inf(det2(F_at_nu_minus)) > 0), results(k).reason = 'W3'; continue; end
     if ~(sup(F_at_nu_plus(1,1)) < 0 && inf(det2(F_at_nu_plus)) > 0), results(k).reason = 'W4'; continue; end
-    Mte = M0 + t*schur.DtM;                   % M(te), positive-definite condition in (36)
-    Kte = K0 + t*schur.DtK;                   % K(te), from the same Taylor quotient
-    gersh = true;
-    for i = 1:5
-        jj = [1:i-1, i+1:5];
-        % mag(...) gives componentwise floating-point upper bounds.  Convert
-        % them back to intervals before summing so the row-radius sum is
-        % guaranteed to be rounded upward.
-        off = sum(intval(mag(Mte(i,jj))));
-        if inf(Mte(i,i) - off) <= 0, gersh = false; break; end
-    end
-    if ~gersh, results(k).reason = 'W1'; continue; end
     sbar = upper_abs(I_nu);
     L_padding = sup(intval(2)*intval(eta)/intval(beta)); % L enclosure radius in (38)
     P_padding = sup(intval(2)*intval(sbar)*intval(E_B) + sqr(intval(E_B))); % product enclosure radius in (38)
@@ -184,8 +188,8 @@ for k = t_levels(:)'
     S_B = S_core_B + midrad(0, S_padding);    % [S]_B from (24) and (38)
     L_B = d1_over_t_B/d2_B + midrad(0, L_padding); % L enclosure in (38)
     P_B = d0_B/d2_B + midrad(0, P_padding);   % product enclosure in (38)
-    nu1_interval = mu1 + midrad(0, E_B);      % ν₁ enclosure, Algorithm 1, line 5
-    nu2_interval = mu2 + midrad(0, E_B);      % ν₂ enclosure, Algorithm 1, line 5
+    nu1_interval = mu1 + midrad(0, E_B);      % ν₁ enclosure from the certified root window
+    nu2_interval = mu2 + midrad(0, E_B);      % ν₂ enclosure from the certified root window
     % Save the coarse eta/beta enclosure before applying the exact root
     % identity below.  The identity is part of the certified box algorithm;
     % keeping both bounds makes its contribution auditable in diagnostics.
@@ -223,7 +227,7 @@ for k = t_levels(:)'
             P_B_from_root_identity = d0_B/d2_B + P_correction;
             L_B = intersect(L_B, L_B_from_root_identity);
             P_B = intersect(P_B, P_B_from_root_identity);
-            S_correction = -PI2*L_correction - 2*P_correction + 2*qI*sqr(t)*(PI2*L_correction + P_correction); % (41) substituted in S from (24)
+            S_correction = -PI2*L_correction - 2*P_correction + 2*ad2I*sqr(t)*(PI2*L_correction + P_correction); % (41) substituted in S from (24)
             S_B_from_root_identity = S_core_B + S_correction;
             S_B = intersect(S_B, S_B_from_root_identity);
             S_padding = min(S_padding, mag(S_correction));
@@ -231,14 +235,20 @@ for k = t_levels(:)'
             nu2_interval = intersect(nu2_interval, mu2 + t*root_shift_over_t(2));
         end
     end
+    if isnan(inf(nu1_interval)) || isnan(sup(nu1_interval)) || ...
+            isnan(inf(nu2_interval)) || isnan(sup(nu2_interval))
+        results(k).reason = 'root_intersection'; continue;
+    end
     lam1 = PI2 + t*nu1_interval;              % refined λ₁(te), (22)
     lam2 = PI2 + t*nu2_interval;              % refined λ₂(te), (22)
-    % Independently certify the index-1 eigenvalue of the complete 5x5
-    % interval pencil with veigs.  The DQ2 Schur analysis remains necessary
-    % for the double cluster and S(t,e), but acceptance also requires this
-    % index-aware enclosure.
+    % Independently certify indices 1 and 3 of the complete 5x5 interval
+    % pencil with one veigs call. The DQ2 Schur analysis remains necessary
+    % for the double cluster and S(t,e); acceptance additionally requires
+    % the verified separation lambda_3 > 16.
     try
-        [veigs_lam1,veigs_info]=qn_veigs_smallest(Kte,Mte);
+        [veigs_bounds,veigs_info]=qn_veigs_indices(Kte,Mte,[1 3]);
+        veigs_lam1=veigs_bounds(1);
+        veigs_lam3=veigs_bounds(2);
     catch ME
         if startsWith(ME.identifier,'qn:VEIGS')
             results(k).reason=ME.identifier; continue;
@@ -249,12 +259,19 @@ for k = t_levels(:)'
     if isnan(inf(lam1)) || isnan(sup(lam1))
         results(k).reason='veigs_intersection'; continue;
     end
+    if inf(veigs_lam3) <= 16
+        results(k).reason='veigs_lambda3'; continue;
+    end
     results(k).veigs_verified=true;
     results(k).veigs_lambda1=[inf(veigs_lam1),sup(veigs_lam1)];
+    results(k).veigs_lambda3=[inf(veigs_lam3),sup(veigs_lam3)];
     results(k).veigs_indices=veigs_info.indices;
     results(k).infS = inf(S_B);
     results(k).lam1 = [inf(lam1), sup(lam1)];
     results(k).lam2 = [inf(lam2), sup(lam2)];
+    results(k).lam3 = [inf(veigs_lam3), sup(veigs_lam3)];
+    results(k).mass_lower = mass_lower;
+    results(k).lambda3_gap_lower = inf(veigs_lam3 - intval('1.5')*PI2);
     results(k).S_interval = [inf(S_B), sup(S_B)];
     results(k).L_interval = [inf(L_B), sup(L_B)];
     results(k).E_B = E_B;
@@ -264,10 +281,16 @@ for k = t_levels(:)'
     results(k).root_identity_used = root_identity_used;
     results(k).coarse_infS = inf(S_B_coarse);
     results(k).root_identity_gain = inf(S_B) - inf(S_B_coarse);
-    if results(k).veigs_verified && inf(S_B) > 0 && inf(lam1) > 0
+    if inf(S_B) <= 0
+        results(k).reason = 'S';
+    elseif inf(lam1) <= 0
+        % This is not an S-only failure: subdivision must rerun the complete
+        % certificate rather than inherit the parent spectral enclosure.
+        results(k).reason = 'lambda1';
+    elseif results(k).veigs_verified && mass_lower > 0 && inf(veigs_lam3) > 16
         results(k).ok = true;
     else
-        results(k).reason = 'S';
+        results(k).reason = 'spectral';
     end
 end
 end
@@ -294,6 +317,19 @@ end
 
 function S = symm(A)
 S = (A + A')/2;
+end
+
+function lower = gershgorin_lower_bound(A)
+% Certified lower bound for lambda_min(A) from symmetric Gershgorin discs.
+% mag(...) is converted back to an interval before summation so every row
+% radius is rounded upward.
+A = hull(intval(A),intval(A)');
+lower = inf;
+for i = 1:size(A,1)
+    jj = [1:i-1, i+1:size(A,2)];
+    off = sum(intval(mag(A(i,jj))));
+    lower = min(lower,inf(A(i,i)-off));
+end
 end
 
 function d = det2(A)
@@ -396,15 +432,16 @@ lmax = (tr + sqrt(disc))/2;
 n = sup(sqrt(max(lmax, intval(0))));
 end
 
-function [kappa2, ok] = schur_residual_norm_bound(schur, t, I_nu, nw, nrmL1)
+function [kappa2, ok, reason] = schur_residual_norm_bound(schur, t, I_nu, nw, nrmL1)
 % kappa2 = ||L1|| * sup over I_nu of ||L2(mu)||, by window subdivision
 wedges = interval_edges(I_nu, nw);
-kappa2 = 0; ok = true;
+kappa2 = 0; ok = true; reason = '';
 for w = 1:nw
     Wj = dq2_interval_hull(wedges(w), wedges(w+1));
     BWj = schur.B0 - (t*Wj)*schur.MW;
+    if ~posdef3(BWj), ok = false; reason = 'W2'; return; end
     [BWji, okinv] = inv3(BWj);
-    if ~okinv, ok = false; return; end
+    if ~okinv, ok = false; reason = 'BWinv'; return; end
     L2j = -BWji*schur.Nm' + schur.B0i*schur.MW*BWji*schur.C0';
     kappa2 = max(kappa2, sup(intval(nrmL1)*intval(spnorm(L2j))));
 end

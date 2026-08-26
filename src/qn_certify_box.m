@@ -34,7 +34,7 @@ end
 if ~qn_interval_ldl_pd(M)
     verdict='fail'; info=struct('reason','mass_not_pd'); return;
 end
-qh=intval(sup(area));
+qh=intval(sup(area)); % paper's upper q_B=Q(B)=sup_{p in B}|Q_p|
 
 try
     [lambda1,veigs_info]=qn_veigs_smallest(K,M);

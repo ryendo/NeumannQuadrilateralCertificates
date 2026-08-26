@@ -1,7 +1,9 @@
-function [d1_over_t,d2,d0,S_core,schur] = qn_single_box_quantities(CK,CM,Cb,EK,EM,Eb,q,t,FR)
+function [d1_over_t,d2,d0,S_core,schur] = qn_single_box_quantities(CK,CM,Cb,EK,EM,Eb,ad2,t,FR)
 % Schur/Vieta quantities shared by the single-box certificate and retests.
-% Operation order matches Algorithm 1: the C_t/F_t chain (28)-(35), the
-% Vieta enclosures (38), and the final substitution in S from (24).
+% Supplies Algorithm 1 with the affine Schur/Vieta data from (28)-(35),
+% the central parts of the enclosures in (38), and the substitution in S
+% from (24). The caller certifies the adaptive root window and exact F_t.
+% ad2=e_a^2+e_d^2; q_area below is the paper's q(te)=|Q_{te}|.
 
 PI2=FR.PI2; V5=FR.V5; W5=FR.W5; D0=FR.D0; I2=FR.I2; I3=FR.I3;
 
@@ -12,9 +14,9 @@ for j=3:9
     tp=tp*t;
 end
 RK=RK+tp*EK; RMv=RMv+tp*EM; Rb=Rb+tp*Eb;
-den=1-sqr(t)*q;
+q_area=1-sqr(t)*ad2;
 wv=Cb{2}+t*Rb;
-RM=RMv-(wv*wv')/den;
+RM=RMv-(wv*wv')/q_area;
 Xt=V5'*(RK-PI2*RM)*V5;
 DtM=CM{2}+t*RM; DtK=CK{2}+t*RK;
 Th=DtK-PI2*DtM;
@@ -45,7 +47,7 @@ d0=-(class_square(al)+class_square(be)) ...
     +t*(al*(G(2,2)-G(1,1))-2*be*G(1,2)) ...
     +sqr(t)*(G(1,1)*G(2,2)-class_square(G(1,2)));
 S_core=-(PI2*d1_over_t+2*d0)/d2 ...
-    +2*q*(sqr(PI2)+sqr(t)*(PI2*d1_over_t+d0)/d2);
+    +2*ad2*(sqr(PI2)+sqr(t)*(PI2*d1_over_t+d0)/d2);
 if nargout>4
     schur=struct('X0',X0,'al',al,'be',be,'Xt',Xt,'DtK',DtK,'DtM',DtM, ...
         'Y',I2+t*Yd,'Nm',Nm,'MW',MW,'C0',C0,'B0',B0,'B0i',B0i, ...

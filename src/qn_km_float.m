@@ -1,5 +1,6 @@
 function [K, M, area] = qn_km_float(p)
 % Non-certified center assembly. Used only to choose a test frame and split axis.
+% The output area is the paper's q(p)=|Q_p|.
 % Use the same exactly cancelled physical-gradient stiffness form as the
 % certified assembly, so center evaluation is also defined on triangle faces.
 
@@ -17,7 +18,7 @@ X=U-a.*U-d.*V-2*b.*UV;
 Y=V-d.*U+a.*V+2*c.*UV;
 Xu=1-a-2*b.*V; Xv=-(d+2*b.*U);
 Yu=-(d-2*c.*V); Yv=1+a+2*c.*U;
-J=Xu.*Yv-Xv.*Yu; JW=J.*W; area=sum(JW);
+J=Xu.*Yv-Xv.*Yu; JW=J.*W; area=sum(JW); % q(p)=|Q_p|
 
 Phi=zeros(400,5); PsiX=zeros(400,5); PsiY=zeros(400,5);
 for q=1:5

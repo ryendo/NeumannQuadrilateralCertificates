@@ -1,5 +1,6 @@
 function [K,M,area,info] = qn_km_enclosure(center,half_widths)
 % Certified first-order mean-value enclosure of the 5x5 pencil.
+% The output area is [q]_B in the paper: q(p)=|Q_p|=1-a^2-d^2.
 %
 % Df(B) is evaluated by INTLAB gradient arithmetic on the entire box, hence
 % f(c)+Df(B)(B-c) contains the complete parameter dependence without a
@@ -21,7 +22,7 @@ for i=1:5
         R(i,j)=mean_value(Rc{i,j},Rg{i,j},half_widths,epsM,epsGradM);
     end
 end
-area=intval('1')-pbox(1)^2-pbox(4)^2;
+area=intval('1')-pbox(1)^2-pbox(4)^2; % [q]_B
 if inf(area)<=0, error('qn:Area','Area is not certifiably positive.'); end
 M=R-(means*means')/area;
 info=padinfo;

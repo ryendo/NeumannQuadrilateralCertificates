@@ -37,27 +37,29 @@ not bundle the dependency; `VEIGS_ROOT` or the second
 `QuadrilateralProofRunner` constructor argument must point to that exact
 checkout.
 
-The wrapper `src/qn_veigs_smallest.m` symmetrizes the interval pencil
-by taking the componentwise hull with its transpose, calls
-`veigs(K,M,1,'sa')`, and rejects results whose returned index information does
-not contain index 1. In the local DQ2 path this enclosure is intersected with
-the Schur-complement enclosure for `lambda_1`; the DQ2 argument remains
-responsible for the double cluster and the sign of `S(t,e)`. In the global
-path the upper endpoint returned by `veigs` replaces the former one-/two-vector
-Rayleigh acceptance test.
+The wrapper `src/qn_veigs_indices.m` symmetrizes the interval pencil by taking
+the componentwise hull with its transpose, asks `veigs` for the first
+`max(requested_indices)` eigenvalues, and rejects results whose certified index
+information omits a requested index. The local DQ2 path requests indices 1 and
+3 with `veigs(K,M,3,'sa')`, intersects the index-1 enclosure with the Schur
+enclosure, and requires the index-3 lower endpoint to exceed 16. The DQ2
+argument remains responsible for the bottom double cluster and the sign of
+`S(t,e)`. The global path retains `src/qn_veigs_smallest.m`, a compatibility
+wrapper requesting index 1 only.
 
 ## Run-of-record computations (2026-07-29--30)
 
-Both current certificates were computed on liulab with INTLAB V12 and `veigs`
-commit `6556d39a0d9819bb172d232062b698aa76e420f6`.
+The last completed certificate runs were computed on liulab with INTLAB V12
+and `veigs` commit `6556d39a0d9819bb172d232062b698aa76e420f6`.
 
 | certificate | source commit | workers | completion | principal certified statistic |
 |---|---|---:|---|---:|
 | local | `2d4d4ce4d40202614f98107f3a284c632ce05c13` | 40 | 13,824/13,824 boxes, 0 failures | `min S = 0.0039623492860414444` |
 | global | `7a0d1b42e0c9660fd66a54feca2e38555a940e34` | 18 | 18/18 forests, 0 unverified | `min margin = 2.6545819961754091e-5` |
 
-The later local commit changes only the local certificate and its regression
-tests; the global implementation is unchanged between the two source commits.
+The differing source commits in the table reflect changes confined to the
+local certificate and its regression tests; the global implementation is
+unchanged between them.
 `results/local/` and `results/global/` contain the corresponding summaries,
 per-worker outputs, SHA-256 manifests, and `RUN_PROVENANCE.txt` records.
 
@@ -67,10 +69,15 @@ worker markers, and no failed boxes. The global audit found exactly worker IDs
 extrema from the worker JSON files reproduces `summary.json`. In particular,
 the global minimum margin is strictly positive.
 
-The local output certifies the implemented single-box `S>0` test and the
-index-1 `veigs` check. It does not contain separate fields for `M>0` or the
-inertia of `K-(3*pi^2/2)M`; it must not be cited as a standalone audit record
-for the paper's additional cluster-contour test.
+The checked-in local output predates the current index-3 extension. It
+certifies the then-implemented single-box `S>0` test and index-1 `veigs` check,
+but has no saved Gershgorin mass lower bound or index-3 enclosure. It therefore
+must not be cited as output of the current local algorithm. The revised CSV
+schema adds `mass_matrix_lower`, `lambda3_lower`, and
+`lambda3_minus_3pi2_over2_lower`; a full-cover rerun is pending.
+The paper's displayed mass bound `0.051` and third-eigenvalue gap `1.195`
+belong to the previous direct interval-inertia route. They are retained as
+comparison values, not attributed to the pending index-3 `veigs` run.
 
 The older local CSV files and completed pre-`veigs` global calculation were
 generated before the present eigensolver became mandatory. They are retained

@@ -2,7 +2,8 @@ function results = dq2_retest_sign_box(child_box, radial_grid, t_levels, parent_
 % Cheap re-test of S-only failures on a sub-box.
 % This only rechecks the final sign condition inf S_B > 0 from
 % the final steps of Algorithm 1; the ancestor already certified
-% Schur/root conditions.
+% Schur/root conditions, a positive Gershgorin mass bound, and the verified
+% index-1/index-3 veigs enclosures with lambda_3>16.
 %
 % PDF notation:
 %   S(t,e) is defined in (24), and positivity is required in (27).
@@ -10,12 +11,13 @@ function results = dq2_retest_sign_box(child_box, radial_grid, t_levels, parent_
 %   (33)-(34), enclosed by (38) and optionally refined by (41).
 %
 % Evaluation:
-%   Reuses ancestor INTLAB interval data for all non-S checks.  On a child
+%   Reuses ancestor INTLAB interval data for all non-S checks. On a child
 %   box it evaluates only the centered-form enclosure of S(t,e), using the
 %   inherited Hessian bound and inherited root-error padding.
 %
 % Valid because every non-S check of the ancestor box (windows, localization,
-% error constants S_padding, box Hessian of S_core) holds a fortiori on any sub-box.
+% error constants S_padding, box Hessian of S_core, mass lower bound, and
+% veigs eigenvalue bounds) holds a fortiori on any sub-box.
 % child_box: child face box. radial_grid: full t-grid. t_levels: levels to re-test.
 % parent_data: ancestor data: .REM (remainder bounds), .S_padding(k),
 %     .S_core_hessian{k} (Hessian objects over the ancestor box).
@@ -38,13 +40,13 @@ EP = dq2_face_direction(xhp, axisdim, sgn);
 EK = midrad(zeros(5), parent_data.REM.BK); EM = midrad(zeros(5), parent_data.REM.BM);
 Eb = midrad(zeros(5,1), parent_data.REM.Bb);
 [CKP, CMP, CbP] = dq2_evaluate_taylor_coefficients_vectorized(TC, EP(1), EP(2), EP(3), EP(4)); % symbolic coefficients -> center Hessian data
-qP = EP(1)*EP(1) + EP(4)*EP(4);
+ad2P = EP(1)*EP(1) + EP(4)*EP(4); % e_a^2+e_d^2, not the area q(p)
 
 m = size(radial_grid, 2) - 1;
 results = repmat(struct('ok',true,'infS',inf,'reason','skip'), m, 1);
 for k = t_levels(:)'
     t = dq2_interval_hull(radial_grid(k), radial_grid(k+1));
-    [~, d2_P, ~, S_core_center_data] = qn_single_box_quantities(CKP, CMP, CbP, EK, EM, Eb, qP, t, FR); % centered [S]_B data from (24), (38)
+    [~, d2_P, ~, S_core_center_data] = qn_single_box_quantities(CKP, CMP, CbP, EK, EM, Eb, ad2P, t, FR); % centered [S]_B data from (24), (38)
     if isempty(S_core_center_data) || isempty(d2_P), results(k).ok = false; results(k).infS = -inf; results(k).reason = 'cinv'; continue; end
     % centered form: point value+gradient at child center, ancestor Hessian
     S_core_hessian = parent_data.S_core_hessian{k};

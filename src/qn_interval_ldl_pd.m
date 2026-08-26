@@ -1,5 +1,6 @@
 function ok = qn_interval_ldl_pd(A)
-% Interval LDL' test without pivoting. Success certifies A(p) positive definite.
+% Interval LDL' test without pivoting. Success certifies every point matrix
+% represented by the interval input positive definite.
 
 n=size(A,1); L=intval(eye(n)); D=intval(zeros(n,1)); ok=true;
 for j=1:n

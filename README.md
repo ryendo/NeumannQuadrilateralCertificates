@@ -37,7 +37,7 @@ This is equation (20) of the paper. Equivalently, the final interval sign test
 proves equation (27), `S(t,e)>0`, on a finite cover of
 `S^3 x (0,rho_local]`, where `p=t e` as in equation (21).
 
-The certified results reported in Appendix B, Table 4 of the paper are:
+The last completed local run reported the following values:
 
 | quantity | certified saved value |
 |---|---:|
@@ -48,9 +48,21 @@ The certified results reported in Appendix B, Table 4 of the paper are:
 
 The numerical realization in Section 5 records the more precise cluster
 bounds `lambda_1 >= 7.5846307638015062` and
-`lambda_2 <= 13.268331793903352`. The checked-in CSV files and summary provide
-the machine-readable output for the single-box `S>0` test and the index-1
-`veigs` check.
+`lambda_2 <= 13.268331793903352`. The checked-in CSV files and summary are the
+immutable machine-readable output of that run: they cover the single-box
+`S>0` test and the index-1 `veigs` check.
+
+The current source extends each local box test to request generalized
+eigenvalue indices 1 and 3 in one `veigs(K,M,3,'sa')` call, requires the
+certified index-3 lower bound to exceed 16, and records both that enclosure and
+the Gershgorin lower bound for `M`. A new full local run has not yet been
+generated, so the checked-in local CSV files are deliberately classified as a
+legacy schema rather than as output of the current algorithm.
+
+The paper retains `0.051` for the mass lower bound and `1.195` for
+`lambda_3-3*pi^2/2` as results of the previous interval-`LDL^T` route. Those
+two values are comparison data: they are neither fields in the checked-in
+legacy CSV files nor claimed outputs of the pending index-3 `veigs` rerun.
 
 ### Global step
 
@@ -103,7 +115,7 @@ solver `veigs`.
 │   └── dq2_*.m                      low-level local DQ2 kernels
 ├── data/taylor_coefficients.mat
 ├── results/
-│   ├── local/                       current local veigs run
+│   ├── local/                       last completed local run (legacy schema)
 │   └── global/                      current global veigs run
 ├── tests/                           smoke and regression tests
 ├── scripts/                         shell launchers
@@ -116,6 +128,7 @@ Install `veigs`:
 
 ```bash
 git clone https://github.com/yuuka-math/veigs.git /path/to/veigs
+git -C /path/to/veigs checkout 6556d39a0d9819bb172d232062b698aa76e420f6
 ```
 
 In MATLAB:
@@ -127,8 +140,10 @@ report = r.smokeTest();
 ```
 
 The smoke test checks that the certified global pencil enclosure contains the
-floating-point center value, exercises a representative per-box test, and
-verifies the saved local CSV set.
+floating-point center value, exercises a representative per-box test (including
+the index-3 `veigs` bound), and classifies the saved local CSV schema. Until the
+full local rerun is installed, the saved files are expected to pass their
+legacy checks while not being marked current-algorithm verified.
 
 The focused local proof-path regression test additionally exercises rigorous
 Taylor-remainder accumulation, the coarse single-box bound, and the exact
@@ -160,12 +175,16 @@ export VEIGS_ROOT=/path/to/veigs
 r = QuadrilateralProofRunner('/path/to/Intlab_V12','/path/to/veigs');
 r.setup();
 summary = r.summarizeLocal();
-assert(summary.verified)
+assert(summary.legacy_certificate_verified)
+assert(~summary.current_algorithm_fields_present)
+assert(~summary.verified)
 ```
 
-`verified=true` requires every saved row to have `ok=1` and the minimum saved
-lower endpoint for `S` to be positive. The proof decision itself was made in
-INTLAB before the decimal endpoint was written to CSV.
+The assertions above describe the checked-in pre-index-3 files. For a newly
+generated current-schema directory, `verified=true` additionally requires a
+positive saved Gershgorin mass bound, a verified index-3 lower bound greater
+than 16, and a positive lower bound for `lambda_3-3*pi^2/2`. The proof decision
+is made in INTLAB before decimal endpoints are written to CSV.
 
 ## Recompute the local certificate
 
@@ -188,7 +207,8 @@ export VEIGS_ROOT=/path/to/veigs
 After all `done_*.txt` files appear:
 
 ```matlab
-r.summarizeLocal(fullfile(r.Root,'results','local_new'))
+summary = r.summarizeLocal(fullfile(r.Root,'results','local_new'));
+assert(summary.verified)
 ```
 
 ## Recompute the global certificate
@@ -284,7 +304,8 @@ These timing values are diagnostics, not proof inputs.
 | Algorithm 1 (Appendix B.4) | `src/qn_single_box_certificate.m` |
 | local cover and subdivision | `src/qn_local_certificate_cover.m` |
 | local Taylor remainder | `src/dq2_bound_taylor_remainder_vectorized.m` |
-| verified index-1 generalized eigenvalue | `src/qn_veigs_smallest.m` |
+| verified selected generalized eigenvalue indices | `src/qn_veigs_indices.m` |
+| global index-1 compatibility wrapper | `src/qn_veigs_smallest.m` |
 | Proposition 6.1 | `src/qn_certify_box.m` |
 | interval pencil `K(B),M(B)` | `src/qn_km_enclosure.m` |
 | GL truncation enclosure | `src/qn_gl_pad.m` |
@@ -295,9 +316,10 @@ These timing values are diagnostics, not proof inputs.
 
 - INTLAB outward rounding and the explicit Taylor/GL remainder bounds are
   soundness-critical.
-- A local box is accepted only when INTLAB proves `inf(S)>0` and `veigs`
-  returns a certified enclosure whose index data contains eigenvalue 1. The
-  DQ2 and `veigs` enclosures for `lambda_1` are intersected.
+- A local box is accepted only when INTLAB proves `inf(S)>0`, the Gershgorin
+  mass lower bound is positive, and one `veigs(K,M,3,'sa')` call returns
+  certified data containing indices 1 and 3 with `inf(lambda_3)>16`. The DQ2
+  and `veigs` enclosures for `lambda_1` are intersected.
 - Cellwise Taylor-remainder magnitudes and Gershgorin row radii are summed as
   intervals; floating-point endpoint sums are not used as certified bounds.
 - Vectorized kernels use only INTLAB operations for proof quantities. Their
