@@ -33,19 +33,17 @@ The reference layout was `ryendo/DirichletSimplicityClustered` at commit
 Both certificate paths use the MIT-licensed
 [`yuuka-math/veigs`](https://github.com/yuuka-math/veigs) package at commit
 `6556d39a0d9819bb172d232062b698aa76e420f6` (2025-12-15). The repository does
-not bundle the dependency; `VEIGS_ROOT` or the second
-`QuadrilateralProofRunner` constructor argument must point to that exact
-checkout.
+not bundle the dependency; `VEIGS_ROOT` or the second `qn_setup` argument must
+point to that exact checkout.
 
-The wrapper `src/qn_veigs_indices.m` symmetrizes the interval pencil by taking
-the componentwise hull with its transpose, asks `veigs` for the first
-`max(requested_indices)` eigenvalues, and rejects results whose certified index
-information omits a requested index. The local DQ2 path requests indices 1 and
-3 with `veigs(K,M,3,'sa')`, intersects the index-1 enclosure with the Schur
-enclosure, and requires the index-3 lower endpoint to exceed 16. The DQ2
-argument remains responsible for the bottom double cluster and the sign of
-`S(t,e)`. The global path retains `src/qn_veigs_smallest.m`, a compatibility
-wrapper requesting index 1 only.
+The wrapper `src/qn_veigs_indices.m` symmetrizes the interval pencil and targets
+each requested index separately. Index 1 uses the smallest-real target; an
+interior index uses its midpoint eigenvalue only to select the target, after
+which the certified index data must contain that index. If the high-level
+routine cannot separate a small interval pencil, its verified `veig` routine
+is used. The local path targets indices 1 and 3, intersects the index-1
+enclosure with the Schur enclosure, and requires the index-3 lower endpoint to
+exceed 16. The global path targets index 1.
 
 ## Run-of-record computations (2026-07-29--30)
 
@@ -125,23 +123,18 @@ certified by `veigs` with returned index information containing `1`.
 
 Porting rules:
 
-- The global cover geometry, D4 representative rule, and directional
-  subdivision fallback are kept. The former 1-vector and 2-vector acceptance
-  tests are replaced by the verified index-1 upper bound from `veigs`. The paper's stated
-  longest-side fallback is applied when the maximum-slack axis is already less
-  than half the longest half-width; this restores the diameter-to-zero premise
-  of the termination proof that the Python extract's bare `argmax(slack)` did
-  not enforce.
+- The global cover geometry and D4 representative rule are kept. The former
+  1-vector and 2-vector acceptance tests are replaced by the verified index-1
+  upper bound from `veigs`. Longest-side bisection is used throughout, directly
+  enforcing the diameter-to-zero premise of the termination proof.
 - Arb intervals are replaced by INTLAB `intval` intervals.
 - Decimal proof constants are constructed with `intval('...')`.
-- The pencil uses a centered mean-value enclosure. A lightweight explicit
-  forward-mode jet evaluates the INTLAB gradient over the complete parameter
-  box, so `f(c)+Df(B)(B-c)` includes all parameter dependence directly and
-  needs no Taylor remainder; no exposed
-  floating derivative is used. Bernstein-ellipse Gauss--Legendre truncation
+- The pencil uses a centered mean-value enclosure. INTLAB automatic gradients
+  evaluate the common exact integrand kernel over the complete parameter box,
+  so `f(c)+Df(B)(B-c)` includes all parameter dependence directly and needs no
+  Taylor remainder. Bernstein-ellipse Gauss--Legendre truncation
   padding is added to both the center values and the parameter gradients in
   the mean-value form. The spatial rule uses order 20 because the
   source kernel itself notes that global/far boxes require order at least about
   20; its default call left the order at 12, whose non-vanishing truncation pad
-  cannot certify skewed interior points. Floating-point values choose the
-  split coordinate only.
+  cannot certify skewed interior points.

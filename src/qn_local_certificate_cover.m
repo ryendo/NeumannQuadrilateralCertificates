@@ -10,9 +10,8 @@ function qn_local_certificate_cover(worker_id, worker_count, face_subdivisions, 
 %
 % Evaluation:
 %   The face boxes E_j are ordinary floating-point endpoints, immediately
-%   converted to INTLAB intervals inside qn_single_box_certificate.m. Each box is
-%   certified by interval arithmetic; boxes failing only S(t,e)>0 are
-%   recursively subdivided and re-tested.
+%   converted to INTLAB intervals inside qn_single_box_certificate.m. Every
+%   undecided product box is subdivided and the complete certificate is rerun.
 %
 % Writes per-box result lines to outdir/res_<procid>.csv and a DONE marker.
 % Every real-valued CSV field is written with %.17e so the decimal strings
@@ -35,7 +34,7 @@ failed_boxes = 0; worst_lower_S = inf; worst_mass_lower = inf;
 worst_lambda3_lower = inf; worst_lambda3_gap_lower = inf;
 for box_id = worker_id:worker_count:total_boxes
     face_box = face_box_table(box_id, :);       % one E; radial_grid supplies T
-    proof = certify_with_subdivision(face_box, 0, radial_grid, [], [], []);
+    proof = certify_with_subdivision(face_box,0,radial_grid,1:(size(radial_grid,2)-1));
     worst_lower_S = min(worst_lower_S, proof.lower_S);
     worst_mass_lower = min(worst_mass_lower,proof.mass_lower);
     worst_lambda3_lower = min(worst_lambda3_lower,proof.lambda3_lower);
@@ -59,71 +58,35 @@ fprintf(fid2, ['worstS=%.17e worstMass=%.17e worstLambda3=%.17e ' ...
 fclose(fid2);
 end
 
-function proof = certify_with_subdivision(face_box, depth, radial_grid, remainder_bounds, t_levels, parent_data)
+function proof = certify_with_subdivision(face_box,depth,radial_grid,t_levels)
 maxdepth = 6;
-if isempty(parent_data)
-    % Full execution of Algorithm 1.
-    [res, child_remainder_bounds] = qn_single_box_certificate(face_box, [], radial_grid, remainder_bounds, t_levels);
-    proof = summarize_results(res, depth);
-    if proof.verified || depth >= maxdepth, return; end
-    failed = find(~[res.ok]);
-    sign_only = arrayfun(@(k) strcmp(res(k).reason,'S') && ...
-        ~isempty(res(k).S_core_hessian), failed);
-    sign_levels = failed(sign_only);
-    child_parent_data = struct('REM',child_remainder_bounds, ...
-        'S_padding',[res.S_padding], ...
-        'veigs_verified',all([res(sign_levels).veigs_verified]), ...
-        'mass_verified',all([res(sign_levels).mass_lower]>0), ...
-        'lambda3_verified',all(arrayfun(@(r) ~isempty(r.lam3) && r.lam3(1)>16, ...
-            res(sign_levels))));
-    child_parent_data.S_core_hessian = {res.S_core_hessian};
-    tasks = cell(0,3);
-    if any(sign_only)
-        tasks(end+1,:) = {sign_levels,child_remainder_bounds,child_parent_data};
-    end
-    if any(~sign_only)
-        tasks(end+1,:) = {failed(~sign_only),child_remainder_bounds,[]};
-    end
-else
-    % Cheap S-only re-test of the final sign condition from (24), (27).
-    assert(isfield(parent_data,'veigs_verified') && parent_data.veigs_verified && ...
-        isfield(parent_data,'mass_verified') && parent_data.mass_verified && ...
-        isfield(parent_data,'lambda3_verified') && parent_data.lambda3_verified, ...
-        'dq2:VEIGSInheritance', ...
-        ['A sign-only child may reuse only a parent box with certified mass ' ...
-        'positivity and veigs indices 1 and 3.']);
-    res = dq2_retest_sign_box(face_box, radial_grid, t_levels, parent_data);
-    proof = summarize_results(res, depth);
-    if proof.verified || depth >= maxdepth, return; end
-    if mod(depth,2)==1, next_parent=[]; else, next_parent=parent_data; end
-    tasks = {find(~[res.ok]),parent_data.REM,next_parent};
-end
+res = qn_single_box_certificate(face_box,radial_grid,t_levels);
+proof = summarize_results(res,depth,t_levels);
+if proof.verified || depth >= maxdepth, return; end
+failed = t_levels(~[res(t_levels).ok]);
 proof.verified = true;
 for child_box = subdivide_face_box(face_box)'
-    for k=1:size(tasks,1)
-        child = certify_with_subdivision(child_box',depth+1,radial_grid, ...
-            tasks{k,2},tasks{k,1},tasks{k,3});
-        proof = merge_proofs(proof,child);
-    end
+    child = certify_with_subdivision(child_box',depth+1,radial_grid,failed);
+    proof = merge_proofs(proof,child);
     if ~proof.verified && depth >= maxdepth-1, return; end
 end
 end
 
-function proof = summarize_results(res,depth)
-ok=[res.ok];
-lower=min([res(ok).infS]);
+function proof = summarize_results(res,depth,t_levels)
+ok=[res(t_levels).ok];
+accepted=t_levels(ok);
+lower=min([res(accepted).infS]);
 if isempty(lower), lower=inf; end
 proof=struct('verified',all(ok),'lower_S',lower,'depth',depth, ...
     'lambda1_lower',inf,'lambda2_upper',-inf,'mass_lower',inf, ...
     'lambda3_lower',inf,'lambda3_gap_lower',inf);
 if ~isfield(res,'lam1'), return; end
-for k=1:numel(res)
+for k=accepted
     if ~isempty(res(k).lam1)
         proof.lambda1_lower=min(proof.lambda1_lower,res(k).lam1(1));
         proof.lambda2_upper=max(proof.lambda2_upper,res(k).lam2(2));
     end
-    if isfield(res,'veigs_verified') && res(k).veigs_verified && ...
-            isfield(res,'lam3') && ~isempty(res(k).lam3)
+    if res(k).ok && isfield(res,'lam3') && ~isempty(res(k).lam3)
         proof.mass_lower=min(proof.mass_lower,res(k).mass_lower);
         proof.lambda3_lower=min(proof.lambda3_lower,res(k).lam3(1));
         proof.lambda3_gap_lower=min(proof.lambda3_gap_lower,res(k).lambda3_gap_lower);

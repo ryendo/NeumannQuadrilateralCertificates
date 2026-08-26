@@ -18,7 +18,7 @@ for k in $(seq 1 "${WORKERS}"); do
     intlab_root="${INTLAB_ROOT}"
   fi
   "${ROOT}/scripts/matlab_runner.sh" "${intlab_root}" \
-    "maxNumCompThreads(1); r.runSingleBoxCertificateWorker(${k},${WORKERS},${FACE_SUBDIVISIONS},fullfile('${ROOT}','${OUTDIR}'))" \
+    "maxNumCompThreads(1); qn_local_certificate_cover(${k},${WORKERS},${FACE_SUBDIVISIONS},fullfile('${ROOT}','${OUTDIR}'))" \
     > "${ROOT}/${OUTDIR}/log_${k}.txt" 2>&1 &
   sleep 1
 done

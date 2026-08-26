@@ -52,12 +52,12 @@ bounds `lambda_1 >= 7.5846307638015062` and
 immutable machine-readable output of that run: they cover the single-box
 `S>0` test and the index-1 `veigs` check.
 
-The current source extends each local box test to request generalized
-eigenvalue indices 1 and 3 in one `veigs(K,M,3,'sa')` call, requires the
-certified index-3 lower bound to exceed 16, and records both that enclosure and
-the Gershgorin lower bound for `M`. A new full local run has not yet been
-generated, so the checked-in local CSV files are deliberately classified as a
-legacy schema rather than as output of the current algorithm.
+The current source targets generalized-eigenvalue indices 1 and 3 separately
+with `veigs`, requires the index-3 lower bound to exceed 16, and records that
+enclosure and the Gershgorin lower bound for `M`. If `veigs` cannot separate a
+small interval pencil, the verified `veig` routine from the same pinned package
+is used. A new full local run has not yet been generated, so the checked-in
+local CSV files are classified as a legacy schema.
 
 The paper retains `0.051` for the mass lower bound and `1.195` for
 `lambda_3-3*pi^2/2` as results of the previous interval-`LDL^T` route. Those
@@ -107,10 +107,10 @@ solver `veigs`.
 
 ```text
 .
-├── QuadrilateralProofRunner.m       unified entry point
 ├── src/                             all proof implementation
 │   ├── qn_single_box_certificate.m  paper Algorithm 1
 │   ├── qn_global_certified_cover.m  paper Appendix C finite cover
+│   ├── qn_quadrilateral_kernels.m   common exact five-mode integrands
 │   ├── qn_*.m                       certificate orchestration/shared code
 │   └── dq2_*.m                      low-level local DQ2 kernels
 ├── data/taylor_coefficients.mat
@@ -134,9 +134,9 @@ git -C /path/to/veigs checkout 6556d39a0d9819bb172d232062b698aa76e420f6
 In MATLAB:
 
 ```matlab
-r = QuadrilateralProofRunner('/path/to/Intlab_V12','/path/to/veigs');
-r.setup();
-report = r.smokeTest();
+addpath('src');
+repo_root = qn_setup('/path/to/Intlab_V12','/path/to/veigs');
+report = qn_smoke_test(repo_root);
 ```
 
 The smoke test checks that the certified global pencil enclosure contains the
@@ -150,10 +150,9 @@ Taylor-remainder accumulation, the coarse single-box bound, and the exact
 root-identity refinement:
 
 ```matlab
-report = qn_local_rigour_test(r.Root);
-global_fast = qn_global_vectorization_test(r.Root);
-local_fast = dq2_vectorization_test(r.Root);
-remainder_fast = dq2_remainder_vectorization_test(r.Root);
+report = qn_local_rigour_test(repo_root);
+local_fast = dq2_vectorization_test(repo_root);
+remainder_fast = dq2_remainder_vectorization_test(repo_root);
 ```
 
 The vectorization regressions check that box evaluations contain their center
@@ -172,9 +171,9 @@ export VEIGS_ROOT=/path/to/veigs
 ## Check the saved local result
 
 ```matlab
-r = QuadrilateralProofRunner('/path/to/Intlab_V12','/path/to/veigs');
-r.setup();
-summary = r.summarizeLocal();
+addpath('src');
+repo_root = qn_setup('/path/to/Intlab_V12','/path/to/veigs');
+summary = qn_summarize_local_results(fullfile(repo_root,'results','local'));
 assert(summary.legacy_certificate_verified)
 assert(~summary.current_algorithm_fields_present)
 assert(~summary.verified)
@@ -207,7 +206,7 @@ export VEIGS_ROOT=/path/to/veigs
 After all `done_*.txt` files appear:
 
 ```matlab
-summary = r.summarizeLocal(fullfile(r.Root,'results','local_new'));
+summary = qn_summarize_local_results(fullfile(repo_root,'results','local_new'));
 assert(summary.verified)
 ```
 
@@ -222,7 +221,8 @@ export VEIGS_ROOT=/path/to/veigs
 or in MATLAB:
 
 ```matlab
-result = r.runGlobalCertifiedCover();
+result = qn_global_certified_cover(3,60,true, ...
+    fullfile(repo_root,'results','global','summary.json'));
 assert(result.complete)
 assert(result.unverified == 0)
 assert(result.min_certified_margin > 0)
@@ -256,10 +256,9 @@ For every retained box, `veigs(K(B),M(B),1,'sa')` returns a rigorous interval
 for the generalized eigenvalue with index 1. A box is accepted only when the
 returned index data contains `1` and the upper endpoint proves
 `sup(Q(B))*sup(lambda_1(B)) < inf(pi^2)`, implementing the conditions in
-equation (52) and the conclusion in equation (53). Floating center
-eigensolves are used only by the source slack-driven bisection heuristic.
-`qn_interval_box` outward-rounds each child without imposing a minimum box
-width.
+equation (52) and the conclusion in equation (53). Every undecided box is
+bisected along a longest side; no floating eigensolve or finite-difference
+quantity enters the cover. `qn_interval_box` outward-rounds each child.
 
 ### Boundary-regular stiffness assembly
 
@@ -281,13 +280,10 @@ box-uniform parameter gradients used by the mean-value form.
 
 ### Proof-preserving vectorization
 
-The global assembly evaluates the same 20-by-20 interval GL rule as the scalar
-reference, but batches its 400 nodes in INTLAB arrays. Parameter derivatives
-are the explicit chain-rule formulas for `X`, `Y`, `J`, the five modes, and
-their physical gradients; no derivative is approximated by floating point.
-On a representative box, the complete warm per-box test decreased from about
-25.2 seconds to 0.24 seconds during development. The former scalar reference
-implementation has since been removed.
+The common kernel batches the 20-by-20 interval GL rule and is evaluated once
+with interval parameters and once with INTLAB automatic gradients. Thus the
+center values and all four parameter derivatives use the same exact formula;
+no floating derivative is present.
 
 The local code similarly evaluates the existing exact monomial coefficient
 table by exponent groups and batches the four Taylor-remainder integration
@@ -304,8 +300,8 @@ These timing values are diagnostics, not proof inputs.
 | Algorithm 1 (Appendix B.4) | `src/qn_single_box_certificate.m` |
 | local cover and subdivision | `src/qn_local_certificate_cover.m` |
 | local Taylor remainder | `src/dq2_bound_taylor_remainder_vectorized.m` |
+| exact stiffness/mass/mean integrands | `src/qn_quadrilateral_kernels.m` |
 | verified selected generalized eigenvalue indices | `src/qn_veigs_indices.m` |
-| global index-1 compatibility wrapper | `src/qn_veigs_smallest.m` |
 | Proposition 6.1 | `src/qn_certify_box.m` |
 | interval pencil `K(B),M(B)` | `src/qn_km_enclosure.m` |
 | GL truncation enclosure | `src/qn_gl_pad.m` |
@@ -317,9 +313,9 @@ These timing values are diagnostics, not proof inputs.
 - INTLAB outward rounding and the explicit Taylor/GL remainder bounds are
   soundness-critical.
 - A local box is accepted only when INTLAB proves `inf(S)>0`, the Gershgorin
-  mass lower bound is positive, and one `veigs(K,M,3,'sa')` call returns
-  certified data containing indices 1 and 3 with `inf(lambda_3)>16`. The DQ2
-  and `veigs` enclosures for `lambda_1` are intersected.
+  mass lower bound is positive, and targeted verified calls certify indices 1
+  and 3 with `inf(lambda_3)>16`. The DQ2 and verified index-1 enclosures are
+  intersected.
 - Cellwise Taylor-remainder magnitudes and Gershgorin row radii are summed as
   intervals; floating-point endpoint sums are not used as certified bounds.
 - Vectorized kernels use only INTLAB operations for proof quantities. Their
@@ -333,8 +329,7 @@ These timing values are diagnostics, not proof inputs.
 - The 20-by-20 GL quadrature is not treated as exact: every stiffness, raw
   mass, and mean entry, and every parameter derivative used in its mean-value
   enclosure, is widened by the Bernstein-ellipse truncation bound.
-- Center eigensolves and finite-difference sensitivities are non-certified,
-  but they only select the split coordinate and do not enter acceptance.
+- Every undecided global box is split along a longest side.
 
 See [PROVENANCE.md](PROVENANCE.md) for source provenance and the Arb-to-INTLAB
 porting record.

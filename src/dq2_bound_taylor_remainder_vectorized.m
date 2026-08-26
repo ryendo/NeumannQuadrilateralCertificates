@@ -3,7 +3,7 @@ function [BK,BM,Bb]=dq2_bound_taylor_remainder_vectorized(Ebox,tb,Ncell,ord)
 
 if nargin<3, Ncell=2; end
 if nargin<4, ord=10; end
-PI=intval('pi'); h=intval('1')/intval(Ncell);
+h=intval('1')/intval(Ncell);
 edges=intval('-0.5')+h*intval(0:Ncell);
 ncell=Ncell^2; ulo=zeros(ncell,1); uhi=ulo; vlo=ulo; vhi=ulo; r=0;
 for iu=1:Ncell
@@ -17,7 +17,7 @@ u=infsup(ulo,uhi); v=infsup(vlo,vhi);
 
 tau=taylorinit(infsup(0,sup(intval(tb))),ord);
 aa=tau*Ebox(1); bb=tau*Ebox(2); cc=tau*Ebox(3); dd=tau*Ebox(4);
-out=dq2_quadrilateral_kernels_vectorized(u,v,aa,bb,cc,dd,PI);
+out=qn_quadrilateral_kernels(u,v,aa,bb,cc,dd);
 
 BK=intval(zeros(5)); BM=intval(zeros(5)); Bb=intval(zeros(5,1));
 pr=zeros(15,2); cpair=0;
