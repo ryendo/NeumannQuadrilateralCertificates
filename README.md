@@ -89,9 +89,8 @@ The certified output reported in Appendix C, equation (58) of the paper is:
 
 Every accepted box is certified by `veigs`, and no box is left unresolved.
 The checked-in worker JSON files provide the machine-readable output for this
-finite cover. Seventeen roots used the standard worker directly; worker 12 was
-evaluated as 50 disjoint dyadic subcovers in parallel, with all fixed
-longest-side bisections included in the totals. See `results/global/README.md`.
+finite cover. Each of the 16 retained root boxes used the standard
+`qn_global_certified_cover` entry point; worker slots 17 and 18 are empty.
 
 ## Core Libraries & Dependencies
 
@@ -239,14 +238,14 @@ representative from each `D_4` orbit, discards boxes proved to lie inside the
 local seam ball or outside `P_K`, and applies the following certified test:
 
 ```text
-Q(B) sup(lambda_1(B)) < pi^2,
-Q(B) = sup_B |Q_p|.
+qbar_B sup(lambda_1(B)) < pi^2,
+qbar_B = sup_B q(p) = sup_B |Q_p|.
 ```
 
 For every retained box, `veigs(K(B),M(B),1,'sa')` returns a rigorous interval
 for the generalized eigenvalue with index 1. A box is accepted only when the
 returned index data contains `1` and the upper endpoint proves
-`sup(Q(B))*sup(lambda_1(B)) < inf(pi^2)`, implementing the conditions in
+`qbar_B*sup(lambda_1(B)) < inf(pi^2)`, implementing the conditions in
 equation (52) and the conclusion in equation (53). Every undecided box is
 bisected along a longest side; no floating eigensolve or finite-difference
 quantity enters the cover. `qn_interval_box` outward-rounds each child.
@@ -316,7 +315,7 @@ These timing values are diagnostics, not proof inputs.
   both retained in the per-box result structure for audit.
 - A global box is accepted only when INTLAB proves positivity of the mass
   matrix by interval LDL, `veigs` certifies index 1, and
-  `sup(Q(B))*sup(lambda_1(B)) < inf(pi^2)`.
+  `qbar_B*sup(lambda_1(B)) < inf(pi^2)`.
 - The 20-by-20 GL quadrature is not treated as exact: every stiffness, raw
   mass, and mean entry, and every parameter derivative used in its mean-value
   enclosure, is widened by the Bernstein-ellipse truncation bound.

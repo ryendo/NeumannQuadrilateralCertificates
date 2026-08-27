@@ -14,7 +14,7 @@ the verified small-pencil `veig` routine from the same pinned package. The
 local calculation targets indices 1 and 3 and requires
 `inf(lambda_3) > 16`; the global calculation targets index 1.
 
-## Run of record (2026-08-26)
+## Run of record (2026-08-26--27)
 
 The checked-in results were computed on `liulab-hpc2023` from source commit
 `b9944f600ba63bed3ddbbde9890febebb613b3ac`.
@@ -32,12 +32,8 @@ recomputed the saved extrema, including
 
 The global audit found worker IDs `1:18`, recomputed every sum and extremum in
 `summary.json`, and checked `complete=true` and `unverified=0` for every
-worker. Worker 12 was accelerated by fixed longest-side presplitting. Its 50
-selected dyadic subcovers are disjoint, cover the retained root exactly, and
-each satisfies `verified + discarded = bisected + 1`. The 49 fixed
-bisections are included in the reported count. The component summaries and
-the 77-line execution driver are retained as `parallel_parts_012.json` and
-`parallel_driver_012.m` in `results/global/`.
+worker. Each of the 16 retained roots was processed directly by
+`qn_global_certified_cover`; workers 17 and 18 have no assigned root.
 
 The per-certificate `RUN_PROVENANCE.txt` files record the exact environment,
 and the `SHA256SUMS` manifests cover all saved outputs.

@@ -5,14 +5,14 @@
   "unverified": 0,
   "veigs_certified": 35990,
   "max_depth": 21,
-  "min_certified_margin": 0.6518326795425065,
+  "min_certified_margin": 0.65183267954250645,
   "min_margin_at": [
-    0.1468483202126626,
-    0.6595719865847487,
+    0.14684832021266259,
+    0.65957198658474869,
     -0.1627515291572765,
     0.020637960888141127
   ],
-  "wall_seconds": 1492.254406,
+  "wall_seconds": 19734.279199,
   "n_init": 3,
   "initial_retained": 1,
   "initial_retained_all": 16,
@@ -20,13 +20,5 @@
   "worker_count": 18,
   "rho_seam": 0.062255590401707306,
   "complete": true,
-  "execution_mode": "exact_parallel_subcover_merge",
-  "parallel_presplit_depth": 5,
-  "parallel_component_count": 50,
-  "parallel_forced_bisections": 49,
-  "parallel_driver_sha256": "50c39f5da8cfd1bf5de814a53a1d9f50a79945b1492f3a801a6a24c22866b8d7",
-  "parallel_component_manifest_sha256": "f5f2896677576ce2412bc183c653f73835c4bf12938c412fdca9682b5cc22115",
-  "unverified_boxes": [
-
-  ]
+  "unverified_boxes": []
 }

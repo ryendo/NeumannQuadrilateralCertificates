@@ -20,13 +20,9 @@ The run used source commit `b9944f600ba63bed3ddbbde9890febebb613b3ac`,
 MATLAB R2023b Update 5, INTLAB V12, and `veigs` commit
 `6556d39a0d9819bb172d232062b698aa76e420f6` on `liulab-hpc2023`.
 
-Seventeen root boxes ran directly through `qn_global_certified_cover`. The
-remaining root (worker 12) was split along longest sides into an exact dyadic
-cover and evaluated in parallel with the same discard and certificate
-predicates. `parallel_parts_012.json` records the 50 disjoint completed
-subcovers used in the merge; their dyadic intervals cover the root exactly,
-and the 49 fixed bisections are included in `worker_012.json` and the global
-total. `parallel_driver_012.m` is the run driver retained for auditability.
+Each of the 16 retained root boxes ran directly through
+`qn_global_certified_cover`. The 18 output slots are kept for the worker
+launcher convention; workers 17 and 18 have no assigned root box.
 
 `RUN_PROVENANCE.txt` records the environment. `SHA256SUMS` covers every saved
 result and provenance file except itself.
