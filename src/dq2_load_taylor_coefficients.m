@@ -3,8 +3,8 @@ function TC = dq2_load_taylor_coefficients()
 % TC.MEXP: 693x4 exponents. TC.CK{j+1}: 15x693 intval, etc. (j = 0..9)
 %
 % PDF notation:
-%   Taylor expansions of K(p), M(p)                (14)
-%   Taylor quotients entering C_t(nu)              (28)
+%   Taylor expansions of K(p), M(p)                (17)
+%   Taylor quotients entering C_t(nu)              (27)
 %
 % Evaluation:
 %   taylor_coefficients.mat stores symbolic monomial coefficients generated

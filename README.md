@@ -33,9 +33,9 @@ the DQ2 computation certifies
 f_2(p) > pi^(-2),       0 < ||p|| <= rho_local.
 ```
 
-This is equation (20) of the paper. Equivalently, the final interval sign test
-proves equation (27), `S(t,e)>0`, on a finite cover of
-`S^3 x (0,rho_local]`, where `p=t e` as in equation (21).
+This is equation (21) of the paper. Equivalently, the final interval sign test
+proves equation (26), `S(t,e)>0`, on a finite cover of
+`S^3 x (0,rho_local]`, with `p=t e` as introduced in Appendix A.1.
 
 The checked-in full-cover run reports:
 
@@ -68,7 +68,7 @@ for p in P_K \ B(0,rho_seam),
 rho_seam = rho#/2 = 1616/(27*pi^6) approximately 0.062256.
 ```
 
-This is equation (16) of the paper. Because the trial space is contained in
+This is equation (20) of the paper. Because the trial space is contained in
 the zero-mean Sobolev space,
 `lambda_1(p) >= mu_1(Q_p)`, so the same strict inequality follows for the
 first nonzero Neumann eigenvalue. The local and global regions overlap on
@@ -77,7 +77,8 @@ first nonzero Neumann eigenvalue. The local and global regions overlap on
 The source Python code called the seam `RHO_SHARP`; this repository uses the
 paper-aligned names `rho_local` and `rho_seam` to remove that ambiguity.
 
-The certified output reported in Appendix C, equation (58) of the paper is:
+The checked-in certified output corresponds to the Appendix B completion
+condition in equation (48):
 
 | quantity | certified saved value |
 |---|---:|
@@ -103,7 +104,7 @@ solver `veigs`.
 .
 ├── src/                             all proof implementation
 │   ├── qn_single_box_certificate.m  paper Algorithm 1
-│   ├── qn_global_certified_cover.m  paper Appendix C finite cover
+│   ├── qn_global_certified_cover.m  paper Appendix B finite cover
 │   ├── qn_quadrilateral_kernels.m   common exact five-mode integrands
 │   ├── qn_*.m                       certificate orchestration/shared code
 │   └── dq2_*.m                      low-level local DQ2 kernels
@@ -238,15 +239,15 @@ representative from each `D_4` orbit, discards boxes proved to lie inside the
 local seam ball or outside `P_K`, and applies the following certified test:
 
 ```text
-qbar_B sup(lambda_1(B)) < pi^2,
-qbar_B = sup_B q(p) = sup_B |Q_p|.
+q_upper_B sup(lambda_1(B)) < pi^2,
+q_upper_B = sup_B q(p) = sup_B |Q_p|.
 ```
 
 For every retained box, `veigs(K(B),M(B),1,'sa')` returns a rigorous interval
 for the generalized eigenvalue with index 1. A box is accepted only when the
 returned index data contains `1` and the upper endpoint proves
-`qbar_B*sup(lambda_1(B)) < inf(pi^2)`, implementing the conditions in
-equation (52) and the conclusion in equation (53). Every undecided box is
+`q_upper_B*sup(lambda_1(B)) < inf(pi^2)`, matching the comparison in
+equation (44) and the conclusion in equation (45). Every undecided box is
 bisected along a longest side; no floating eigensolve or finite-difference
 quantity enters the cover. `qn_interval_box` outward-rounds each child.
 
@@ -287,7 +288,7 @@ These timing values are diagnostics, not proof inputs.
 
 | paper item | implementation |
 |---|---|
-| Algorithm 1 (Appendix B.4) | `src/qn_single_box_certificate.m` |
+| Algorithm 1 (Appendix A.4) | `src/qn_single_box_certificate.m` |
 | local cover and subdivision | `src/qn_local_certificate_cover.m` |
 | local Taylor remainder | `src/dq2_bound_taylor_remainder_vectorized.m` |
 | exact stiffness/mass/mean integrands | `src/qn_quadrilateral_kernels.m` |
@@ -295,5 +296,5 @@ These timing values are diagnostics, not proof inputs.
 | Proposition 6.1 | `src/qn_certify_box.m` |
 | interval pencil `K(B),M(B)` | `src/qn_km_enclosure.m` |
 | GL truncation enclosure | `src/qn_gl_pad.m` |
-| Appendix C finite cover, Theorem 6.2 | `src/qn_global_certified_cover.m` |
+| Appendix B finite cover, Theorem 6.2 | `src/qn_global_certified_cover.m` |
 | `P_K`, `P_C`, seam and `D_4` logic | `src/qn_*box*.m`, `src/qn_global_constants.m` |

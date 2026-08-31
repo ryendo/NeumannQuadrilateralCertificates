@@ -1,8 +1,9 @@
 function [d1_over_t,d2,d0,S_core,schur] = qn_single_box_quantities(CK,CM,Cb,EK,EM,Eb,ad2,t,FR)
 % Schur/Vieta quantities shared by the single-box certificate and retests.
-% Supplies Algorithm 1 with the affine Schur/Vieta data from (28)-(35),
-% the central parts of the enclosures in (38), and the substitution in S
-% from (24). The caller certifies the adaptive root window and exact F_t.
+% Supplies Algorithm 1 with the affine Schur/Vieta data from (28) and
+% (31)-(35), the central parts of the enclosures in (36), and the
+% substitution in S from (23). The caller certifies the adaptive root window
+% and exact F_t.
 % ad2=e_a^2+e_d^2; q_area below is the paper's q(te)=|Q_{te}|.
 
 PI2=FR.PI2; V5=FR.V5; W5=FR.W5; D0=FR.D0; I2=FR.I2; I3=FR.I3;

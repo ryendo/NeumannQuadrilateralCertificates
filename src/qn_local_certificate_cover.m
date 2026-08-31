@@ -1,11 +1,11 @@
 function qn_local_certificate_cover(worker_id, worker_count, face_subdivisions, outdir)
 % Process one worker slice of the local Algorithm 1 certificate cover.
-% This is the covering/subdivision loop described in Appendix B.4.
+% This is the covering/subdivision loop described in Appendix A.4.
 %
 % PDF notation:
-%   p = t e, e ∈ S³                                     (21)
-%   direction charts and radial intervals               (42)-(43)
-%   S(t,e)>0                                            (24), (27)
+%   local target f_2(p)>pi^(-2); p=t e                  (21), Appendix A.1
+%   direction charts and radial intervals               (40)-(41)
+%   S(t,e)>0: definition and target                     (23), (26)
 %   Single-box certificate returns VERIFIED/UNDECIDED
 %
 % Evaluation:
@@ -27,7 +27,7 @@ fid = fopen(sprintf('%s/res_%03d.csv', outdir, worker_id), 'w');
 fprintf(fid, ['box_id,ok,inf_S,max_subdivision_depth,elapsed_seconds,' ...
     'lambda1_lower,lambda2_upper,mass_matrix_lower,lambda3_lower,' ...
     'lambda3_minus_3pi2_over2_lower\n']);
-face_box_table = face_boxes(face_subdivisions); % E boxes for B in Eq. (42)
+face_box_table = face_boxes(face_subdivisions); % E boxes for B in Eq. (40)
 total_boxes = size(face_box_table, 1);
 tstart = tic;
 failed_boxes = 0; worst_lower_S = inf; worst_mass_lower = inf;

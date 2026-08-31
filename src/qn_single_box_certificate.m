@@ -1,27 +1,27 @@
 function results = qn_single_box_certificate(face_box, radial_grid, t_levels)
 % Certified INTLAB second-order difference-quotient test on one face box.
-% Implements Algorithm 1, "Certificate on B," in Appendix B.4.
+% Implements Algorithm 1, "Certificate on B," in Appendix A.4.
 %
 % Current paper formulas:
 %   λᵢ(te) = π² + tνᵢ(t,e), and L is the scaled cluster sum.           (22)
-%   P(t,e)=ν₁(t,e)ν₂(t,e) has the continuous extension in (23).
-%   S(t,e) := −π²L − 2P + 2(eₐ²+e_d²){π⁴+t²(π²L+P)}.                  (24)
-%   C_t(ν) is the integral difference-quotient pencil.                (28)
-%   Φ_t(ν,e) and F_t(ν) define the 2×2 Schur complement.              (29)
-%   det F_t(ν)=0 is equivalent to the full generalized eigenproblem.  (31)
-%   F̂_t(ν) and Ψ_t(ν,e) are the affine model and remainder.           (32)
-%   d̃₁ is defined in (33), and det F̂_t is written in (34).
-%   L and P are enclosed by (38), with the refinement in (40)-(41).
+%   P(t,e)=ν₁(t,e)ν₂(t,e) is extended just before the definition of S.
+%   S(t,e) := −π²L − 2P + 2(eₐ²+e_d²){π⁴+t²(π²L+P)}.                  (23)
+%   C_t(ν) is the integral difference-quotient pencil.                (27)
+%   Φ_t(ν,e) and F_t(ν) define the 2×2 Schur complement.              (28)
+%   det F_t(ν)=0 is equivalent to the full generalized eigenproblem.  (30)
+%   F̂_t and Ψ_t are defined before (31); their comparison identity is (33).
+%   d̃₁ is defined in (31), and det F̂_t is written in (32).
+%   L and P are enclosed by (36), with the refinement in (38)-(39).
 %
 % Code variable map:
-%   face_box                  -> chart box from χ_{r,σ} in (42)
+%   face_box                  -> chart box from χ_{r,σ} in (40)
 %   t                         -> radial interval T = [t₋,t₊]
 %   I_nu, I_nu_tight          -> candidate interval [ν₋,ν₊]
-%   d2_B, d1_over_t_B, d0_B   -> d₂, d̃₁, d₀ in (33)-(34)
+%   d2_B, d1_over_t_B, d0_B   -> d₂, d̃₁, d₀ in (31)-(32)
 %   S_core_B, S_padding       -> central part and error radius of [S]_B
-%                                obtained from (24) and (38)
+%                                obtained from (23) and (36)
 %   S_B                       -> final [S]_B enclosure in Algorithm 1
-%   E_B                       -> root-error radius tη/β used after (39)
+%   E_B                       -> root-error radius tη/β from the proof of (36)
 %   mass_lower                -> Gershgorin lower bound for lambda_min(M(te))
 %   lam1, lam3                -> verified index-1/index-3 enclosures
 %
@@ -51,14 +51,14 @@ end
 radial_edges = radial_grid;
 m = size(radial_edges, 2) - 1;
 
-% Direction enclosures for B = (E intersect S^3) x T, Eq. (42).
+% Direction enclosures for B = (E intersect S^3) x T, Eq. (40).
 EI = dq2_face_direction(xI, axisdim, sgn);   % e-box E_j, evaluated as INTLAB intervals
 xhp = hessianinit(xc);
 EP = dq2_face_direction(xhp, axisdim, sgn);  % e at center, evaluated as INTLAB Hessian variables
 xhb = hessianinit(xI);
 EG = dq2_face_direction(xhb, axisdim, sgn);  % e over E_j, Hessian enclosure for centered form
 
-% Taylor-quotient remainder bounds implement the integral in C_t from (28),
+% Taylor-quotient remainder bounds implement the integral in C_t from (27),
 % avoiding division by an interval containing t = 0.
 [BKr, BMr, Bbr] = dq2_bound_taylor_remainder_vectorized(EI, radial_edges(end), 2, 10);
 EK = midrad(zeros(5), BKr); EM = midrad(zeros(5), BMr); Eb = midrad(zeros(5,1), Bbr); % interval R_K, R_M, R_b
@@ -71,7 +71,7 @@ end
 [CKP, CMP, CbP] = dq2_evaluate_taylor_coefficients_vectorized(TC, EP(1), EP(2), EP(3), EP(4)); % center value/gradient
 [CKG, CMG, CbG] = dq2_evaluate_taylor_coefficients_vectorized(TC, EG(1), EG(2), EG(3), EG(4)); % Hessian enclosure over box
 
-ad2I = sqr(EI(1)) + sqr(EI(4));               % e_a^2+e_d^2 in (24), not the area q(p)
+ad2I = sqr(EI(1)) + sqr(EI(4));               % e_a^2+e_d^2 in (23), not the area q(p)
 ad2P = EP(1)*EP(1) + EP(4)*EP(4);
 ad2G = EG(1)*EG(1) + EG(4)*EG(4);
 
@@ -89,7 +89,7 @@ for k = t_levels(:)'
     % -- Single-box certificate: interval blocks and Schur data -----------
     [d1_over_t_I, d2_I, d0_I, S_core_I, schur] = qn_single_box_quantities(CKI, CMI, CbI, EK, EM, Eb, ad2I, t, FR); % whole-box interval evaluation
     if isempty(schur), results(k).reason = 'affine_perp_inverse'; continue; end
-    Mte = M0 + t*schur.DtM;                   % M(te), positive-definite condition in (36)
+    Mte = M0 + t*schur.DtM;                   % M(te), positive-definite condition in (34)
     Kte = K0 + t*schur.DtK;                   % K(te), from the same Taylor quotient
     mass_lower = gershgorin_lower_bound(Mte);
     if ~(isfinite(mass_lower) && mass_lower > 0)
@@ -100,20 +100,20 @@ for k = t_levels(:)'
     [d1_over_t_G, d2_G, d0_G, S_core_G] = qn_single_box_quantities(CKG, CMG, CbG, EK, EM, Eb, ad2G, t, FR); % box Hessian enclosure
     if isempty(d1_over_t_P) || isempty(d1_over_t_G), results(k).reason = 'centered_inverse'; continue; end
     dx = xI - xc;
-    d1_over_t_B = intersect(centered_hessian_interval(d1_over_t_P, d1_over_t_G, dx), d1_over_t_I); % d̃₁, (33)-(34)
-    d2_B = intersect(centered_hessian_interval(d2_P, d2_G, dx), d2_I);                             % d₂, (34)
-    d0_B = intersect(centered_hessian_interval(d0_P, d0_G, dx), d0_I);                             % d₀, (34)
-    S_core_B = intersect(centered_hessian_interval(S_core_P, S_core_G, dx), S_core_I);             % central [S]_B part from (24), (38)
+    d1_over_t_B = intersect(centered_hessian_interval(d1_over_t_P, d1_over_t_G, dx), d1_over_t_I); % d̃₁, (31)-(32)
+    d2_B = intersect(centered_hessian_interval(d2_P, d2_G, dx), d2_I);                             % d₂, (32)
+    d0_B = intersect(centered_hessian_interval(d0_P, d0_G, dx), d0_I);                             % d₀, (32)
+    S_core_B = intersect(centered_hessian_interval(S_core_P, S_core_G, dx), S_core_I);             % central [S]_B part from (23), (36)
     if isnan(inf(d1_over_t_B)) || isnan(inf(d2_B)) || isnan(inf(d0_B)) || isnan(inf(S_core_B))
         results(k).reason = 'centered_intersection'; continue;
     end
     if inf(d2_B) <= 0, results(k).reason = 'affine_root_leading_coefficient'; continue; end
-    % Roots of det Fhat_t(mu) = d2*mu^2 - t*dtilde1*mu + d0, Eq. (34).
+    % Roots of det Fhat_t(mu) = d2*mu^2 - t*dtilde1*mu + d0, Eq. (32).
     d1_B = t*d1_over_t_B;
     DiscC = max(sqr(d1_B) - 4*d2_B*d0_B, intval(0));
     rt = sqrt(DiscC);
     mu1 = (d1_B - rt)/(2*d2_B); mu2 = (d1_B + rt)/(2*d2_B);
-    beta = inf(lammin2(schur.Bbar));          % beta in (37), interval lower bound
+    beta = inf(lammin2(schur.Bbar));          % beta in (35), interval lower bound
     if beta <= 0, results(k).reason = 'affine_slope_not_pd'; continue; end
     pad = upper_initial_pad(schur.al, schur.be); % adaptive window margin
     ok = true; reason = ''; eta = inf; E_B = inf; I_nu = [];
@@ -125,8 +125,8 @@ for k = t_levels(:)'
         I_nu = padded_hull(mu1, mu2, pad);
         [kappa2, ok, reason] = schur_residual_norm_bound(schur, t, I_nu, nw, nrmL1); % interval bound for ||F_t - Fhat_t||/t
         if ~ok, break; end
-        eta = upper_eta(I_nu, t, kappa2);       % eta in (37)
-        E_B = upper_ebar(t, eta, beta);       % root-error radius t*eta/beta after (39)
+        eta = upper_eta(I_nu, t, kappa2);       % eta in (35)
+        E_B = upper_ebar(t, eta, beta);       % root-error radius t*eta/beta from the proof of (36)
         if upper_plus_margin(E_B) <= pad
             window_closed = true;
             break
@@ -152,26 +152,26 @@ for k = t_levels(:)'
     wedges = interval_edges(I_nu, nw);
     for w = 1:nw
         Wj = dq2_interval_hull(wedges(w), wedges(w+1));
-        BWj = schur.B0 - (t*Wj)*schur.MW;     % D_perp+t*C_{t,perp,perp}(nu), (36)
+        BWj = schur.B0 - (t*Wj)*schur.MW;     % D_perp+t*C_{t,perp,perp}(nu), (34)
         if ~posdef3(BWj), ok = false; reason = 'perp_block_not_pd'; break; end
         [BWji, okinv] = inv3(BWj);
         if ~okinv, ok = false; reason = 'perp_block_inverse'; break; end
         CWj = schur.C0 - (t*Wj)*schur.Nm;
         dZ = -(schur.Nm*BWji*CWj' + CWj*BWji*schur.Nm') + CWj*BWji*schur.MW*BWji*CWj';
-        mono = schur.Y + t*symm(dZ);          % -partial_nu F_t(nu), (36)
+        mono = schur.Y + t*symm(dZ);          % -partial_nu F_t(nu), (34)
         if inf(lammin2(symm(mono))) <= 0, ok = false; reason = 'schur_derivative'; break; end
     end
     if ~ok, results(k).reason = reason; continue; end
-    F_at_nu_minus = schur_matrix_at_nu(Xfull, schur.Y, schur.C0, schur.B0, schur.Nm, schur.MW, t, intval(inf(I_nu))); % F_t(nu_-), (36)
-    F_at_nu_plus = schur_matrix_at_nu(Xfull, schur.Y, schur.C0, schur.B0, schur.Nm, schur.MW, t, intval(sup(I_nu))); % F_t(nu_+), (36)
+    F_at_nu_minus = schur_matrix_at_nu(Xfull, schur.Y, schur.C0, schur.B0, schur.Nm, schur.MW, t, intval(inf(I_nu))); % F_t(nu_-), (34)
+    F_at_nu_plus = schur_matrix_at_nu(Xfull, schur.Y, schur.C0, schur.B0, schur.Nm, schur.MW, t, intval(sup(I_nu))); % F_t(nu_+), (34)
     if ~(inf(F_at_nu_minus(1,1)) > 0 && inf(det2(F_at_nu_minus)) > 0), results(k).reason = 'left_schur_not_pd'; continue; end
     if ~(sup(F_at_nu_plus(1,1)) < 0 && inf(det2(F_at_nu_plus)) > 0), results(k).reason = 'right_schur_not_nd'; continue; end
     sbar = upper_abs(I_nu);
-    L_padding = sup(intval(2)*intval(eta)/intval(beta)); % L enclosure radius in (38)
-    P_padding = sup(intval(2)*intval(sbar)*intval(E_B) + sqr(intval(E_B))); % product enclosure radius in (38)
+    L_padding = sup(intval(2)*intval(eta)/intval(beta)); % L enclosure radius in (36)
+    P_padding = sup(intval(2)*intval(sbar)*intval(E_B) + sqr(intval(E_B))); % product enclosure radius in (36)
     S_padding = sup(intval(L_padding)*PI2*(intval(1) + intval(2)*sqr(t)) + ...
                intval(2)*intval(P_padding)*(intval(1) + sqr(t)));
-    S_B = S_core_B + midrad(0, S_padding);    % [S]_B from (24) and (38)
+    S_B = S_core_B + midrad(0, S_padding);    % [S]_B from (23) and (36)
     nu1_interval = mu1 + midrad(0, E_B);      % ν₁ enclosure from the certified root window
     nu2_interval = mu2 + midrad(0, E_B);      % ν₂ enclosure from the certified root window
     % Save the coarse eta/beta enclosure before applying the exact root
@@ -207,7 +207,7 @@ for k = t_levels(:)'
             L_correction = root_shift_over_t(1) + root_shift_over_t(2); % (δ₁+δ₂)/t
             P_correction = t*(nu1_interval*root_shift_over_t(2) + nu2_interval*root_shift_over_t(1)) + ...
                            sqr(t)*root_shift_over_t(1)*root_shift_over_t(2);
-            S_correction = -PI2*L_correction - 2*P_correction + 2*ad2I*sqr(t)*(PI2*L_correction + P_correction); % (41) substituted in S from (24)
+            S_correction = -PI2*L_correction - 2*P_correction + 2*ad2I*sqr(t)*(PI2*L_correction + P_correction); % (39) substituted in S from (23)
             S_B_from_root_identity = S_core_B + S_correction;
             S_B = intersect(S_B, S_B_from_root_identity);
             nu1_interval = intersect(nu1_interval, mu1 + t*root_shift_over_t(1));
@@ -366,13 +366,13 @@ W = infsup(lo, hi);
 end
 
 function eta = upper_eta(W, t, kappa2)
-% Upward-rounded eta bound for (37).
+% Upward-rounded eta bound for (35).
 sbar = upper_abs(W);
 eta = sup(sqr(intval(sbar)) * sqr(intval(t)) * intval(kappa2));
 end
 
 function ebar = upper_ebar(t, eta, beta)
-% Upward-rounded root-error radius t*eta/beta used after (39).
+% Upward-rounded root-error radius t*eta/beta from the proof of (36).
 ebar = sup(intval(t) * intval(eta) / intval(beta));
 end
 
