@@ -297,34 +297,3 @@ These timing values are diagnostics, not proof inputs.
 | GL truncation enclosure | `src/qn_gl_pad.m` |
 | Appendix C finite cover, Theorem 6.2 | `src/qn_global_certified_cover.m` |
 | `P_K`, `P_C`, seam and `D_4` logic | `src/qn_*box*.m`, `src/qn_global_constants.m` |
-
-## Trust boundary
-
-- INTLAB outward rounding and the explicit Taylor/GL remainder bounds are
-  soundness-critical.
-- A local box is accepted only when INTLAB proves `inf(S)>0`, the Gershgorin
-  mass lower bound is positive, and targeted verified calls certify indices 1
-  and 3 with `inf(lambda_3)>16`. The DQ2 and verified index-1 enclosures are
-  intersected.
-- Cellwise Taylor-remainder magnitudes and Gershgorin row radii are summed as
-  intervals; floating-point endpoint sums are not used as certified bounds.
-- Vectorized kernels use only INTLAB operations for proof quantities. Their
-  scalar reference implementations remain covered by componentwise interval
-  overlap/subset tests.
-- The coarse `eta/beta` lower bound and the exact root-identity improvement are
-  both retained in the per-box result structure for audit.
-- A global box is accepted only when INTLAB proves positivity of the mass
-  matrix by interval LDL, `veigs` certifies index 1, and
-  `qbar_B*sup(lambda_1(B)) < inf(pi^2)`.
-- The 20-by-20 GL quadrature is not treated as exact: every stiffness, raw
-  mass, and mean entry, and every parameter derivative used in its mean-value
-  enclosure, is widened by the Bernstein-ellipse truncation bound.
-- Every undecided global box is split along a longest side.
-
-See [PROVENANCE.md](PROVENANCE.md) for source provenance and the Arb-to-INTLAB
-porting record.
-
-## Confidentiality
-
-There is intentionally no open-source license. See [PRIVATE.md](PRIVATE.md).
-Keep the GitHub repository private and do not publish releases or mirrors.
