@@ -2,7 +2,7 @@
 
 This repository contains the MATLAB + INTLAB computations accompanying
 
-> Braxton Osting and Ryoki Endo, *Maximizing Laplace--Neumann eigenvalues on
+> Ryoki Endo and Braxton Osting, *Maximizing the fundamental Laplace--Neumann eigenvalue on
 > quadrilaterals* (2026).
 
 The paper proves that, among convex planar quadrilaterals of fixed area, the
