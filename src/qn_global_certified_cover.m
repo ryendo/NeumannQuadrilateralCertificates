@@ -25,8 +25,13 @@ stack=stack(worker_id:worker_count:end);
 % empty cells; a later pop would then return [] instead of a box struct.
 stack=stack(:);
 initial_retained=numel(stack);
+initial_box_ids=zeros(initial_retained,1);
+for k=1:initial_retained
+    initial_box_ids(k)=stack{k}.initial_id;
+end
 cert=0; disc=0; bis=0; unv=0; max_d=0;
-min_margin=inf; min_at=[];
+delta_star_lower=inf; delta_star_at=[];
+q_lower_min=inf; lambda_lower_min=inf;
 unverified_boxes=struct('center',{},'half_widths',{},'depth',{}, ...
     'reason',{},'split_dim',{});
 t0=tic;
@@ -35,7 +40,7 @@ while ~isempty(stack)
     assert(isstruct(B) && isscalar(B) && isfield(B,'depth'), ...
         'qn:StackCorrupt','Global cover stack contains a non-box entry.');
     max_d=max(max_d,B.depth);
-    if qn_box_inside_ball(B.center,B.half_widths,C.rho_seam) || ...
+    if qn_box_inside_ball(B.center,B.half_widths,C.rho_sharp_over_2) || ...
             qn_box_outside_pk(B.center,B.half_widths)
         disc=disc+1;
         continue;
@@ -43,7 +48,12 @@ while ~isempty(stack)
     [verdict,info,sdim]=qn_certify_box(B.center,B.half_widths);
     if strcmp(verdict,'cert')
         cert=cert+1;
-        if info.margin<min_margin, min_margin=info.margin; min_at=B.center'; end
+        q_lower_min=min(q_lower_min,info.q_lower);
+        lambda_lower_min=min(lambda_lower_min,info.lambda1(1));
+        if info.delta_lower<delta_star_lower
+            delta_star_lower=info.delta_lower;
+            delta_star_at=B.center';
+        end
     elseif B.depth<max_depth
         [L,R]=qn_bisect_box(B,sdim); stack{end+1,1}=L; stack{end+1,1}=R; bis=bis+1;
     else
@@ -61,16 +71,26 @@ while ~isempty(stack)
         fprintf('global: cert=%d disc=%d bis=%d unv=%d stack=%d\n',cert,disc,bis,unv,numel(stack));
     end
 end
+worker_complete=unv==0;
+covers_all_initial=initial_retained==initial_retained_all;
+complete=worker_complete && covers_all_initial && ...
+    isfinite(q_lower_min) && q_lower_min>0 && ...
+    isfinite(lambda_lower_min) && lambda_lower_min>0 && ...
+    isfinite(delta_star_lower) && delta_star_lower>0;
 result=struct('verified',cert,'discarded',disc,'bisected',bis, ...
     'unverified',unv,'veigs_certified',cert,'max_depth',max_d, ...
-    'min_certified_margin',min_margin,'min_margin_at',min_at, ...
+    'delta_star_lower',delta_star_lower,'delta_star_at',delta_star_at, ...
+    'q_lower_min',q_lower_min,'lambda_lower_min',lambda_lower_min, ...
+    'min_certified_margin',delta_star_lower,'min_margin_at',delta_star_at, ...
     'wall_seconds',toc(t0),'n_init',n_init,'initial_retained',initial_retained, ...
     'initial_retained_all',initial_retained_all,'worker_id',worker_id, ...
-    'worker_count',worker_count,'rho_seam',mid(C.rho_seam),'complete',unv==0);
+    'worker_count',worker_count,'rho_sharp_over_2',mid(C.rho_sharp_over_2), ...
+    'schema_version',2,'initial_box_ids',initial_box_ids', ...
+    'worker_complete',worker_complete,'complete',complete);
 result.unverified_boxes=unverified_boxes;
 fprintf(['RESULT global verified=%d discarded=%d bisected=%d unverified=%d ' ...
-    'max_depth=%d min_certified_margin=%.17g wall_s=%.1f\n'], ...
-    cert,disc,bis,unv,max_d,min_margin,result.wall_seconds);
+    'max_depth=%d delta_star_lower=%.17g wall_s=%.1f\n'], ...
+    cert,disc,bis,unv,max_d,delta_star_lower,result.wall_seconds);
 if ~isempty(output_file)
     temporary_output=[output_file '.tmp'];
     fid=fopen(temporary_output,'w'); assert(fid>=0,'Cannot open output file.');

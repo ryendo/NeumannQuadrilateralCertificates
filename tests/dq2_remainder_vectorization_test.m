@@ -1,5 +1,5 @@
 function report=dq2_remainder_vectorization_test(repo_root)
-% Check validity and subdivision monotonicity of Taylor-cell bounds.
+% Check validity and subdivision monotonicity of the Taylor remainder bounds.
 
 if nargin<1, repo_root=fileparts(fileparts(mfilename('fullpath'))); end
 addpath(fullfile(repo_root,'src'));
@@ -13,7 +13,7 @@ coarse=[Kc(:);Mc(:);bc(:)]; fine=[Kf(:);Mf(:);bf(:)];
 assert(all(isfinite(fine)) && all(fine>=0),'Taylor remainder radii are invalid.');
 tolerance=64*eps(max(1,coarse));
 assert(all(fine<=coarse+tolerance), ...
-    'Taylor-cell subdivision unexpectedly enlarged a remainder bound.');
+    'Subdivision unexpectedly enlarged a Taylor remainder bound.');
 report=struct('valid_nonnegative_bounds',true,'subdivision_monotone',true, ...
     'coarse_seconds',coarseSeconds,'fine_seconds',fineSeconds, ...
     'largest_relative_reduction',max((coarse-fine)./max(1,coarse)));

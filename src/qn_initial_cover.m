@@ -14,7 +14,8 @@ for i1=1:n
                     center(k)=(lo+hi)/2;
                     hw(k)=(hi-lo)/2 + 8*eps(max(abs([lo hi center(k) 1])));
                 end
-                boxes{r}=struct('center',center,'half_widths',hw,'depth',0);
+                boxes{r}=struct('center',center,'half_widths',hw, ...
+                    'depth',0,'initial_id',r);
             end
         end
     end

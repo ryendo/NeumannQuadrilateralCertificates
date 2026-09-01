@@ -1,31 +1,17 @@
-function [d1_over_t,d2,d0,S_core,schur] = qn_single_box_quantities(CK,CM,Cb,EK,EM,Eb,ad2,t,FR)
+function [d1_over_t,d2,d0,S_core,schur] = qn_single_box_quantities(blocks,ad2,t,FR)
 % Schur/Vieta quantities shared by the single-box certificate and retests.
 % Supplies Algorithm 1 with the affine Schur/Vieta data from (28) and
 % (31)-(35), the central parts of the enclosures in (36), and the
-% substitution in S from (23). The caller certifies the adaptive root window
-% and exact F_t.
-% ad2=e_a^2+e_d^2; q_area below is the paper's q(te)=|Q_{te}|.
+% substitution in S from (23). The caller chooses [nu], subdivides it, and
+% certifies the remaining conditions for F_t.
+% Preconditions: the whole-box caller has certified M(te)>0 and blocks.B0>0.
+% This routine is the first stage that forms a Schur inverse.
+% ad2=e_a^2+e_d^2.
 
-PI2=FR.PI2; V5=FR.V5; W5=FR.W5; D0=FR.D0; I2=FR.I2; I3=FR.I3;
-
-% Taylor quotient for Delta_t K, Delta_t M, and the mean vector.
-RK=CK{3}; RMv=CM{3}; Rb=Cb{3}; tp=t;
-for j=3:9
-    RK=RK+tp*CK{j+1}; RMv=RMv+tp*CM{j+1}; Rb=Rb+tp*Cb{j+1};
-    tp=tp*t;
-end
-RK=RK+tp*EK; RMv=RMv+tp*EM; Rb=Rb+tp*Eb;
-q_area=1-sqr(t)*ad2;
-wv=Cb{2}+t*Rb;
-RM=RMv-(wv*wv')/q_area;
-Xt=V5'*(RK-PI2*RM)*V5;
-DtM=CM{2}+t*RM; DtK=CK{2}+t*RK;
-Th=DtK-PI2*DtM;
-Yd=V5'*DtM*V5;
-Nm=V5'*DtM*W5;
-MW=I3+t*(W5'*DtM*W5);
-C0=V5'*Th*W5;
-B0=D0+t*(W5'*Th*W5);
+PI2=FR.PI2; I2=FR.I2;
+Xt=blocks.Xt; DtM=blocks.DtM; DtK=blocks.DtK;
+Yd=blocks.Yd; Nm=blocks.Nm; MW=blocks.MW;
+C0=blocks.C0; B0=blocks.B0;
 [B0i,ok]=inverse3_if_regular(B0);
 if ~ok
     d1_over_t=[]; d2=[]; d0=[]; S_core=[]; schur=[];
@@ -36,12 +22,11 @@ CB0=C0*B0i;
 Zb1=symmetrize(-(Nm*B0i*C0'+C0*B0i*Nm')+CB0*MW*B0i*C0');
 
 % Reduced two-dimensional pencil and its Vieta coefficients.
-X0=V5'*(CK{2}-PI2*CM{2})*V5;
-al=(X0(1,1)-X0(2,2))/2;
-be=(X0(1,2)+X0(2,1))/2;
+X0=blocks.X0; al=blocks.al; be=blocks.be;
 G=Xt-Z0;
 CBm=Yd+t*Zb1;
-d2=determinant2(I2+t*CBm);
+minus_dFhat_dnu=I2+t*CBm; % -partial_nu Fhat_t in (35)
+d2=determinant2(minus_dFhat_dnu);
 d1_over_t=(G(1,1)+G(2,2))+al*(CBm(2,2)-CBm(1,1))-2*be*CBm(1,2) ...
     +t*(G(1,1)*CBm(2,2)+G(2,2)*CBm(1,1)-2*G(1,2)*CBm(1,2));
 d0=-(class_square(al)+class_square(be)) ...
@@ -52,7 +37,7 @@ S_core=-(PI2*d1_over_t+2*d0)/d2 ...
 if nargout>4
     schur=struct('X0',X0,'al',al,'be',be,'Xt',Xt,'DtK',DtK,'DtM',DtM, ...
         'Y',I2+t*Yd,'Nm',Nm,'MW',MW,'C0',C0,'B0',B0,'B0i',B0i, ...
-        'Bbar',I2+t*CBm,'Z0',Z0,'G',G);
+        'minus_dFhat_dnu',minus_dFhat_dnu,'Z0',Z0,'G',G);
 end
 end
 

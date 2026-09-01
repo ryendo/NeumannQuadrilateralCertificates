@@ -1,158 +1,182 @@
-# Certified Neumann-eigenvalue bounds for quadrilaterals
+# Computer-Assisted Proof for the Neumann Eigenvalue Problem on Quadrilaterals
 
-This repository contains the MATLAB + INTLAB computations accompanying
+This repository contains the MATLAB source code and saved computation summaries
+for the paper
 
-> Ryoki Endo and Braxton Osting, *Maximizing the fundamental Laplace--Neumann eigenvalue on
-> quadrilaterals* (2026).
+> Ryoki Endo and Braxton Osting, *Maximizing the fundamental Laplace--Neumann
+> eigenvalue on quadrilaterals* (2026).
 
-The paper proves that, among convex planar quadrilaterals of fixed area, the
-square uniquely maximizes the first nonzero Laplace--Neumann eigenvalue. The
-computer-assisted part uses a five-dimensional trigonometric Rayleigh--Ritz
-space on a fixed reference square and has two certified components:
+The equation, theorem, algorithm, and table numbers below refer to the current
+manuscript. The paper-to-code table also gives the corresponding LaTeX labels
+so that each reference remains identifiable when the manuscript is revised.
 
-1. a local second-order difference-quotient certificate on a ball about the
-   square; and
-2. a global adaptive box cover outside a smaller seam ball.
+## Background
 
-## Certified statements
+For the quadrilateral parameter
 
-Let `p=(a,b,c,d)` be the paper's quadrilateral parameter and let
-`K(p)x = lambda M(p)x` be the 5-by-5 Rayleigh--Ritz pencil.
+$$
+\mathbf p=(a,b,c,d), \qquad Q_{\mathbf 0}=\square,
+$$
 
-### Local step
+the area is
 
-For
+$$
+q(\mathbf p)=|Q_{\mathbf p}|=1-a^2-d^2
+$$
 
-```text
-rho_local = rho# = 3232/(27*pi^6) approximately 0.1245,
-```
+by equation (2), `e:Area`. Sections 3 and 4.3 define the five-dimensional
+Rayleigh--Ritz pencil
 
-the DQ2 computation certifies
+$$
+K(\mathbf p)x=\lambda M(\mathbf p)x,
+\qquad
+\lambda_1(\mathbf p)\le\cdots\le\lambda_5(\mathbf p),
+$$
 
-```text
-f_2(p) > pi^(-2),       0 < ||p|| <= rho_local.
-```
+using integrals over the fixed reference square. The Rayleigh--Ritz comparison
+in equation (12), `e:KeyInequality`, reduces the proof of Theorem 1.1,
+`t:Main`, to two certified computations.
 
-This is equation (21) of the paper. Equivalently, the final interval sign test
-proves equation (26), `S(t,e)>0`, on a finite cover of
-`S^3 x (0,rho_local]`, with `p=t e` as introduced in Appendix A.1.
+1. **Step (I), equation (21), `eq:local-statement`.** For
 
-The checked-in full-cover run reports:
+   $$
+   \rho^\sharp=\frac{3232}{27\pi^6},
+   $$
 
-| quantity | certified saved value |
-|---|---:|
-| initial products / maximum depth | 13,824 × 9 / 1 |
-| certified lower bound for `S` | 0.0044848550155087707 |
-| certified bounds for (`lambda_1`, `lambda_2`) | `lambda_1 >= 7.6300046469977758`, `lambda_2 <= 13.267374191855003` |
-| certified lower bound for `lambda_min(M)` | 0.052100929203335616 |
-| certified lower bound for `lambda_3` | 17.834653422811055 |
-| certified lower bound for `lambda_3-3*pi^2/2` | 3.0302468211770126 |
-| outcome | verified on every final box |
+   certify
 
-The calculation targets generalized-eigenvalue indices 1 and 3 separately,
-accepts only certified index data containing the requested index, and requires
-the index-3 lower bound to exceed 16. If the high-level `veigs` call cannot
-separate a small interval pencil, the verified `veig` routine from the same
-pinned package is used. The CSV files record both enclosures and the
-Gershgorin lower bound for `M`; `summary.json` independently checks the saved
-cover and all completion markers.
+   $$
+   f_2(\mathbf p)>\pi^{-2}
+   \qquad
+   (0<\|\mathbf p\|\le\rho^\sharp).
+   $$
 
-### Global step
+   With \(\mathbf p=t\mathbf e\), this is reduced by equations (22)--(26) to
+   the inequality \(S(t,\mathbf e)>0\). Appendix A, `app:diff-quotient`, gives
+   the interval conditions (34)--(35), the enclosures (36), the refinement formulas
+   (38)--(39), and the finite cover (40)--(42). Algorithm 1 in Appendix A.4 is
+   implemented by `src/qn_single_box_certificate.m`.
 
-The global computation certifies
+2. **Step (II), equation (20), `e:global-target`.** On
 
-```text
-|Q_p| lambda_1(p) < pi^2
-for p in P_K \ B(0,rho_seam),
+   $$
+   \Omega_{\mathrm{II}}
+   =\mathcal P_{\mathrm K}
+   \setminus B\!\left(\mathbf 0,\frac{\rho^\sharp}{2}\right),
+   $$
 
-rho_seam = rho#/2 = 1616/(27*pi^6) approximately 0.062256.
-```
+   certify
 
-This is equation (20) of the paper. Because the trial space is contained in
-the zero-mean Sobolev space,
-`lambda_1(p) >= mu_1(Q_p)`, so the same strict inequality follows for the
-first nonzero Neumann eigenvalue. The local and global regions overlap on
-`rho#/2 <= ||p|| <= rho#`.
+   $$
+   |Q_{\mathbf p}|\lambda_1(\mathbf p)<\pi^2.
+   $$
 
-The source Python code called the seam `RHO_SHARP`; this repository uses the
-paper-aligned names `rho_local` and `rho_seam` to remove that ambiguity.
+   Proposition 6.1, `p:box-bound`, gives the boxwise implication. Appendix B,
+   `app:implementation`,
+   defines the interval box in (43), the accepted-box conditions and conclusion
+   in (44)--(45), the discard and bisection rules in (46)--(47), and the finite
+   completion condition in (48). Theorem 6.2, `t:box-cover-terminates`, then
+   yields the required inequality on \(\Omega_{\mathrm{II}}\).
 
-The checked-in certified output corresponds to the Appendix B completion
-condition in equation (48):
+The two computations overlap on
 
-| quantity | certified saved value |
-|---|---:|
-| initial boxes / maximum depth | 16 / 29 |
-| accepted / discarded / unresolved boxes | 117,083 / 15,222 / 0 |
-| bisections | 132,289 |
-| `Delta_*` | 8.0698658297961856e-6 |
-| conclusion | `|Q_p| lambda_1(p) < pi^2` on `Omega_II` |
+$$
+\frac{\rho^\sharp}{2}\le\|\mathbf p\|\le\rho^\sharp.
+$$
 
-Every accepted box is certified by `veigs`, and no box is left unresolved.
-The checked-in worker JSON files provide the machine-readable output for this
-finite cover. Each of the 16 retained root boxes used the standard
-`qn_global_certified_cover` entry point; worker slots 17 and 18 are empty.
+The code uses the paper notation through the fields `rho_sharp` and
+`rho_sharp_over_2`.
 
 ## Core Libraries & Dependencies
 
-Both components use MATLAB, INTLAB, and the verified generalized-eigenvalue
-solver `veigs`.
+This project relies on specialized libraries for verified numerical computation:
 
-## Project structure
+1. **INTLAB**: The fundamental toolbox for rigorous interval arithmetic in MATLAB.
+   - **Source:** [http://www.tuhh.de/ti3/intlab/](http://www.tuhh.de/ti3/intlab/) [INTLAB_V12, INTLAB_V14 were used for the computation.]
+2. Revised version of **VFEM2D**: Used for rigorous finite element matrix assembly and high-precision eigenvalue bounds (Lehmann–Goerisch method).
+   - **Source:** [https://github.com/xfliu/VFEM2D](https://github.com/xfliu/VFEM2D) [2025/12/13]
+3. **veigs**: Used for solving generalized matrix eigenvalue problems with rigorous error bounds with the information of indices.
+   - **Source:** [https://github.com/yuuka-math/veigs](https://github.com/yuuka-math/veigs) [2025/12/13]
+
+The source code in this repository directly calls INTLAB and `veigs`. It does
+not call VFEM2D: the matrices \(K(\mathbf p)\) and \(M(\mathbf p)\) are assembled
+from the fixed-reference-square integrals of Section 4.3. VFEM2D is listed as a
+related verified finite-element library, not as an executable dependency of
+this repository.
+
+The saved computations recorded in `PROVENANCE.md` used MATLAB R2023b,
+INTLAB V12, and `veigs` at commit
+`6556d39a0d9819bb172d232062b698aa76e420f6`.
+
+## Project Structure
 
 ```text
 .
-├── src/                             all proof implementation
-│   ├── qn_single_box_certificate.m  paper Algorithm 1
-│   ├── qn_global_certified_cover.m  paper Appendix B finite cover
-│   ├── qn_quadrilateral_kernels.m   common exact five-mode integrands
-│   ├── qn_*.m                       certificate orchestration/shared code
-│   └── dq2_*.m                      low-level local DQ2 kernels
-├── data/taylor_coefficients.mat
+├── src/
+│   ├── qn_single_box_certificate.m   # Algorithm 1, Appendix A.4
+│   ├── qn_single_box_blocks.m        # K, M, and C_t blocks in (27)--(28)
+│   ├── qn_single_box_quantities.m    # F_t and coefficients in (28), (31)--(32)
+│   ├── qn_exact_root_refinement_corrections.m # corrections in (39)
+│   ├── qn_local_certificate_cover.m  # finite cover in (40)--(42)
+│   ├── qn_certify_box.m              # certified per-box implementation of (43)--(45)
+│   ├── qn_global_code_test.m          # all five accepted-box conditions in (44)
+│   ├── qn_global_certified_cover.m   # finite cover in (46)--(49)
+│   ├── qn_km_enclosure.m             # interval matrices in Appendix B
+│   ├── qn_km_float.m                 # coordinate choice before (47), not a proof bound
+│   ├── qn_veigs_indices.m            # verified eigenvalue indices
+│   ├── qn_quadrilateral_kernels.m    # integrands of Section 4.3
+│   └── dq2_*.m                       # Taylor coefficients used in Appendix A
+├── data/
+│   └── taylor_coefficients.mat       # coefficients for equation (17)
 ├── results/
-│   ├── local/                       current targeted-index run
-│   └── global/                      current index-1 veigs run
-├── tests/                           smoke and regression tests
-├── scripts/                         shell launchers
-└── PROVENANCE.md
+│   ├── local/                        # per-box output from the recorded Algorithm 1 run
+│   └── global/                       # aggregate summaries from the recorded global run
+├── tests/                            # representative and saved-output checks
+├── scripts/                          # MATLAB launch scripts
+├── PROVENANCE.md                     # software versions and run information
+└── CITATION.cff
 ```
 
-## Setup and quick check
+## Installation & Setup
 
-Install `veigs`:
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/ryendo/NeumannQuadrilateralCertificates.git
+cd NeumannQuadrilateralCertificates
+```
+
+### 2. Install INTLAB and `veigs`
+
+Install INTLAB from the source listed above. Clone the `veigs` version used by
+the saved computation:
 
 ```bash
 git clone https://github.com/yuuka-math/veigs.git /path/to/veigs
 git -C /path/to/veigs checkout 6556d39a0d9819bb172d232062b698aa76e420f6
 ```
 
-In MATLAB:
+### 3. Initialize MATLAB
 
 ```matlab
 addpath('src');
-repo_root = qn_setup('/path/to/Intlab_V12','/path/to/veigs');
-report = qn_smoke_test(repo_root);
+repo_root = qn_setup('/path/to/Intlab_V12', '/path/to/veigs');
 ```
 
-The smoke test checks that the certified global pencil enclosure contains the
-floating-point center value, exercises representative global and local
-per-box tests (including the index-3 bound), and verifies the saved local
-certificate summary.
+`qn_setup` starts INTLAB, adds `src/` and `tests/` to the MATLAB path, and
+checks that both `veigs` and `veig` are available.
 
-The focused local proof-path regression test additionally exercises rigorous
-Taylor-remainder accumulation, the coarse single-box bound, and the exact
-root-identity refinement:
+## Usage
+
+### 1. Representative verification
+
+Run the representative local and global checks and verify the saved local
+summary:
 
 ```matlab
-report = qn_local_rigour_test(repo_root);
-local_fast = dq2_vectorization_test(repo_root);
-remainder_fast = dq2_remainder_vectorization_test(repo_root);
+report = qn_smoke_test(repo_root);
+assert(report.ok)
 ```
-
-The vectorization regressions check that box evaluations contain their center
-values and center Hessians, that Taylor-cell subdivision does not enlarge the
-remainder bounds, and that the global assembly certifies a box crossing
-`c_3=0`.
 
 From a shell:
 
@@ -162,23 +186,18 @@ export VEIGS_ROOT=/path/to/veigs
 ./scripts/run_smoke.sh
 ```
 
-## Check the saved local result
+This test does not recompute either finite cover.
 
-```matlab
-addpath('src');
-repo_root = qn_setup('/path/to/Intlab_V12','/path/to/veigs');
-summary = qn_summarize_local_results(fullfile(repo_root,'results','local'));
-assert(summary.verified)
-```
+### 2. Step (I): equations (21)--(42) and Algorithm 1
 
-`verified=true` requires complete box IDs and worker markers, a positive saved
-Gershgorin mass bound, a verified index-3 lower bound greater than 16, and
-positive lower bounds for both `S` and `lambda_3-3*pi^2/2`. The proof decision
-is made in INTLAB before decimal endpoints are written to CSV.
+For each product box defined by (40)--(41), Algorithm 1 verifies the
+conditions (34)--(35), computes (36), optionally intersects it with
+(38)--(39), and substitutes the resulting intervals into (23). Acceptance
+requires the inequality (26). The implementation also obtains verified
+enclosures of generalized-eigenvalue indices 1 and 3 and requires
+\(\inf[\lambda_3]>16\), as reported in Table 3.
 
-## Recompute the local certificate
-
-On one machine:
+#### Run the complete finite cover
 
 ```bash
 export INTLAB_ROOT=/path/to/Intlab_V12
@@ -186,7 +205,9 @@ export VEIGS_ROOT=/path/to/veigs
 ./scripts/run_local_workers.sh 16 12 results/local_new
 ```
 
-To use separate INTLAB copies for independent MATLAB processes:
+The arguments are the number of MATLAB processes, the number of subintervals
+per coordinate in (40), and the output directory. To use separate INTLAB
+copies for simultaneous MATLAB processes:
 
 ```bash
 export INTLAB_ROOT_PATTERN='/path/to/Intlab_V12_no%d'
@@ -194,107 +215,215 @@ export VEIGS_ROOT=/path/to/veigs
 ./scripts/run_local_workers.sh 40 12 results/local_new
 ```
 
-After all `done_*.txt` files appear:
+After all processes finish, verify the output:
 
 ```matlab
-summary = qn_summarize_local_results(fullfile(repo_root,'results','local_new'));
+summary = qn_summarize_local_results( ...
+    fullfile(repo_root, 'results', 'local_new'));
 assert(summary.verified)
 ```
 
-## Recompute the global certificate
-
-```bash
-export INTLAB_ROOT=/path/to/Intlab_V12
-export VEIGS_ROOT=/path/to/veigs
-./scripts/run_global.sh
-```
-
-or in MATLAB:
+#### Check the saved local results
 
 ```matlab
-result = qn_global_certified_cover(3,60,true, ...
-    fullfile(repo_root,'results','global','summary.json'));
-assert(result.complete)
-assert(result.unverified == 0)
-assert(result.min_certified_margin > 0)
+summary = qn_summarize_local_results( ...
+    fullfile(repo_root, 'results', 'local'));
+assert(summary.verified)
 ```
 
-To split the independent root-box forests across INTLAB copies:
+The saved output gives
+
+```text
+direction boxes obtained from (40) / intervals in (41):  13,824 / 9
+maximum subdivision depth:             1
+inf S:                                 0.0044848550155087707
+inf lambda_1:                          7.6300046469977758
+sup lambda_2:                          13.267374191855003
+inf lambda_min(M):                     0.052100929203335616
+inf lambda_3:                          17.834653422811055
+inf (lambda_3 - 3*pi^2/2):             3.0302468211770126
+uncertified products:                  0
+```
+
+These are the unrounded values underlying the rounded entries in Table 3.
+They were generated from source commit
+`b9944f600ba63bed3ddbbde9890febebb613b3ac`, as recorded in
+`results/local/RUN_PROVENANCE.txt`. The assertion above audits the saved CSV
+rows and completion markers; it does not claim that they were regenerated by
+the current working tree. The current implementation uses the literal
+factor \(t^2\) in \(-\partial_\nu F_t\) from (34) and the literal
+\(\widehat\nu_i\) terms in (39), so a new `results/local_new` run is required
+to produce results with the current source code. This does not invalidate the saved local
+proof: its derivative test implies the condition in (34) for
+\(0\le t<1\), and its earlier implementation of (39) used a wider interval.
+
+### 3. Step (II): Proposition 6.1, Theorem 6.2, and equations (43)--(49)
+
+For a box \(\mathcal B\) in (43), the code encloses
+\([K]_{\mathcal B}\), \([M]_{\mathcal B}\), and \([q]_{\mathcal B}\),
+requires \(\underline q_{\mathcal B}>0\), certifies
+\([M]_{\mathcal B}\succ0\), and obtains a verified enclosure
+\([\lambda]_{\mathcal B}\) whose index data contains 1. It also requires
+\(\underline\lambda_{\mathcal B}>0\) and evaluates
+
+$$
+\Delta_{\mathcal B}
+=\underline{\pi^2}
+-\overline q_{\mathcal B}\,\overline\lambda_{\mathcal B},
+$$
+
+as in equation (44). These five conditions give both inequalities in (45).
+The remaining boxes are treated by (46)--(47), and completion is the condition
+(48).
+
+The coordinate used in (47) is selected from floating-point changes in the
+center pencil. If that coordinate is too short, the code selects a longest
+side, ensuring \(h_r\ge\tfrac12\max_s h_s\). This choice does not enter the
+interval proof; every child box is tested independently.
+
+Because the stored centers and half-widths are binary floating-point numbers,
+`qn_bisect_box.m` rounds the children outward. The implemented relation is the
+conservative covering
+\(\mathcal B\subseteq\mathcal B^-\cup\mathcal B^+\); the children can extend
+by a few rounding units beyond the exact halves displayed in (47).
+
+#### Run the complete finite cover
+
+The complete computation is intended for multiple MATLAB processes. With one
+INTLAB copy per process, write to a new directory:
 
 ```bash
 export INTLAB_ROOT_PATTERN='/path/to/Intlab_V12_no%d'
 export VEIGS_ROOT=/path/to/veigs
-./scripts/run_global_workers.sh 18
+./scripts/run_global_workers.sh 16 results/global_new
 ```
 
-After `worker_001.json` through `worker_018.json` have appeared:
+After all workers finish, merge the summaries and test (48):
 
 ```matlab
-result = qn_merge_global_results('results/global',18,'results/global/summary.json');
+result = qn_merge_global_results( ...
+    fullfile(repo_root, 'results', 'global_new'), 16, ...
+    fullfile(repo_root, 'results', 'global_new', 'summary.json'));
 assert(result.complete)
 ```
 
-The cover starts from the paper's bounding cube `P_C`, retains one
-representative from each `D_4` orbit, discards boxes proved to lie inside the
-local seam ball or outside `P_K`, and applies the following certified test:
+For a single MATLAB process and a new output directory:
 
-```text
-q_upper_B sup(lambda_1(B)) < pi^2,
-q_upper_B = sup_B q(p) = sup_B |Q_p|.
+```matlab
+output_dir = fullfile(repo_root, 'results', 'global_new');
+if ~isfolder(output_dir), mkdir(output_dir); end
+result = qn_global_certified_cover( ...
+    3, 60, true, fullfile(output_dir, 'summary.json'));
+assert(result.complete)
+assert(result.unverified == 0)
+assert(result.q_lower_min > 0)
+assert(result.lambda_lower_min > 0)
+assert(result.delta_star_lower > 0)
 ```
 
-For every retained box, `veigs(K(B),M(B),1,'sa')` returns a rigorous interval
-for the generalized eigenvalue with index 1. A box is accepted only when the
-returned index data contains `1` and the upper endpoint proves
-`q_upper_B*sup(lambda_1(B)) < inf(pi^2)`, matching the comparison in
-equation (44) and the conclusion in equation (45). Every undecided box is
-bisected along a longest side; no floating eigensolve or finite-difference
-quantity enters the cover. `qn_interval_box` outward-rounds each child.
+Here `3` is the subdivision count in each coordinate of the initial family
+\(\mathcal G_0\) in Appendix B, and `60` is the maximum subdivision depth.
+The JSON files are aggregate run summaries. They record counts and certified
+minima, but not every accepted and discarded leaf box; reproducing the full
+finite cover therefore requires rerunning the code. The current schema also
+records each worker's assigned initial-box IDs; the merge rejects missing or
+duplicate assignments before reporting `complete=true`.
 
-### Boundary-regular stiffness assembly
+#### Verify the saved output
 
-For the ambient trigonometric trial functions used in the paper,
-`grad_ref(psi o Phi) = DPhi' * grad_x(psi)`. Hence the inverse-metric factors
-in the generic pullback cancel exactly and
-
-```text
-K_ij(p) = integral_square
-          (grad_x psi_i . grad_x psi_j)(Phi_p(u,v)) J(u,v;p) du dv.
+```matlab
+result = jsondecode(fileread( ...
+    fullfile(repo_root, 'results', 'global', 'summary.json')));
+assert(result.unverified == 0)
+assert(result.min_certified_margin > 0)
 ```
 
-The implementation assembles this form directly. It is algebraically
-identical to the source Rayleigh--Ritz pencil in the interior, but contains no
-division by `J` and remains regular when one corner value `J=c_i` vanishes on a
-triangle face. The Bernstein-ellipse GL pad is correspondingly an
-entire-integrand bound; it also encloses the quadrature errors in the
-box-uniform parameter gradients used by the mean-value form.
+These two assertions check only the aggregate fields recorded by the saved
+run. They do not upgrade the old JSON schema to the current five-condition
+test in (44), or establish the finite cover in (49).
 
-### Proof-preserving vectorization
+The saved output gives
 
-The common kernel batches the 20-by-20 interval GL rule and is evaluated once
-with interval parameters and once with INTLAB automatic gradients. Thus the
-center values and all four parameter derivatives use the same exact formula;
-no floating derivative is present.
+```text
+initial boxes retained after (46) and D_4 reduction:  16
+accepted boxes:                                       117,083
+discarded boxes:                                      15,222
+unresolved boxes:                                     0
+bisections:                                           132,289
+maximum subdivision depth:                            29
+Delta_* in (48):                                      8.0698658297961856e-6
+```
 
-The local code similarly evaluates the existing exact monomial coefficient
-table by exponent groups and batches the four Taylor-remainder integration
-cells. Generic Hessian `0^0` is deliberately avoided: exponent zero is assigned
-as the exact constant one and positive powers are built recursively. On the
-focused local regression, the certified lower bound increased slightly while
-the first-call wall time decreased from about 17.3 seconds to 8.3 seconds.
-These timing values are diagnostics, not proof inputs.
+The saved summary records \(\mathcal U=\varnothing\) and \(\Delta_*>0\), the
+two conditions in (48). Its box counts come from the run recorded in
+`results/global/RUN_PROVENANCE.txt`. That run predates the explicit
+\(\underline\lambda_{\mathcal B}>0\) branch now implemented for (44), and its
+JSON files do not store the lower eigenvalue bound for every accepted box.
+It also used a binary-floating-point bisection that can leave a rounding-size
+gap between the two children in (47). Because the leaf boxes were not saved,
+the old subdivision cannot be re-audited. Consequently, these files are
+historical run summaries, not a current finite-cover certificate; the global
+calculation must be recomputed with the present code.
 
-## Paper-to-code map
+The current manuscript presently reports the following values from an earlier
+run:
 
-| paper item | implementation |
-|---|---|
-| Algorithm 1 (Appendix A.4) | `src/qn_single_box_certificate.m` |
-| local cover and subdivision | `src/qn_local_certificate_cover.m` |
-| local Taylor remainder | `src/dq2_bound_taylor_remainder_vectorized.m` |
-| exact stiffness/mass/mean integrands | `src/qn_quadrilateral_kernels.m` |
-| verified selected generalized eigenvalue indices | `src/qn_veigs_indices.m` |
-| Proposition 6.1 | `src/qn_certify_box.m` |
-| interval pencil `K(B),M(B)` | `src/qn_km_enclosure.m` |
-| GL truncation enclosure | `src/qn_gl_pad.m` |
-| Appendix B finite cover, Theorem 6.2 | `src/qn_global_certified_cover.m` |
-| `P_K`, `P_C`, seam and `D_4` logic | `src/qn_*box*.m`, `src/qn_global_constants.m` |
+```text
+initial active boxes after (46) and D_4 reduction:  18
+accepted boxes:                                     166,928
+discarded boxes:                                    25,285
+unresolved boxes:                                   0
+bisections:                                         192,195
+maximum subdivision depth:                          30
+Delta_* in (48):                                    at least 2.654e-5
+```
+
+That earlier run used an obsolete \(D_4\)-representative rule. On the
+\(3^4\) initial grid, the rule selected 18 boxes but omitted one of the 16
+distinct orbits and selected three other orbits twice. The omitted orbit meets
+\(\mathcal P_{\mathrm K}\setminus B(0,\rho^\sharp/2)\), so those 18-box values
+must not be used as a finite-cover certificate. The current rule selects
+exactly one representative from every orbit; `qn_smoke_test.m` checks this and
+the resulting count of 16. The checked-in 16-box run uses this corrected rule,
+but a new run is still required to record every condition in the current (44)
+schema.
+
+### 4. Verify the saved files
+
+The SHA-256 manifests cover the saved numerical output and run information:
+
+```bash
+(cd results/local && sha256sum -c SHA256SUMS)
+(cd results/global && sha256sum -c SHA256SUMS)
+```
+
+## Paper-to-Code Correspondence
+
+| Paper item | Formula or condition | Implementation | Saved output or check |
+|---|---|---|---|
+| Section 4.3, `app:integral-rep` | Fixed-reference-square integrals for \(K(\mathbf p)\) and \(M(\mathbf p)\) | `src/qn_quadrilateral_kernels.m`, `src/qn_assemble_interval.m` | `tests/qn_smoke_test.m` |
+| Equation (17), `e:KM-expansion` | Taylor coefficients at \(\mathbf p=\mathbf 0\) | `data/taylor_coefficients.mat`, `src/dq2_load_taylor_coefficients.m` | `tests/dq2_vectorization_test.m` |
+| Equations (21)--(26), `eq:local-statement`--`eq:S-positive-target` | \(f_2(\mathbf p)>\pi^{-2}\) reduced to \(S(t,\mathbf e)>0\) | `src/qn_single_box_certificate.m`, `src/qn_local_certificate_cover.m` | `results/local/summary.json` |
+| Equation (27), `eq:Ct-definition` | \(C_t(\nu)\) and its Taylor enclosure | `src/qn_single_box_blocks.m`, `src/dq2_evaluate_taylor_coefficients_vectorized.m`, `src/dq2_bound_taylor_remainder_vectorized.m` | `tests/qn_local_rigour_test.m` |
+| Equation (28), `eq:Ft-definition`; equations (31)--(36), `eq:d1-continuous-extension`--`eq:symmetric-single-box-enclosures` | \(F_t\), \(\widehat F_t\), and the enclosures of \(L\) and \(\nu_1\nu_2\) | `src/qn_single_box_quantities.m`, `src/qn_single_box_certificate.m` | `tests/qn_local_rigour_test.m` |
+| Equations (38)--(39), `eq:exact-root-refinement`, `eq:refined-symmetric-quantities` | Refinement when \([\nu_1]\cap[\nu_2]=\varnothing\) | `src/qn_single_box_certificate.m`, `src/qn_exact_root_refinement_corrections.m` | `tests/qn_local_rigour_test.m`, `tests/qn_smoke_test.m` |
+| Equations (40)--(42), `eq:sphere-chart`--`eq:subdivision-inclusion` | Cover of \(S^3\times[0,\rho^\sharp]\) and subdivision | `src/dq2_face_direction.m`, `src/qn_local_certificate_cover.m` | `results/local/` |
+| Algorithm 1, `alg:single-box-certificate` | Conditions (34)--(35), equations (36), (38)--(39), and \(S>0\) | `src/qn_single_box_certificate.m` | Table 3, `tab:local-second-order-certificate`; saved run at source commit `b9944f6` |
+| Proposition 6.1, `p:box-bound`; equations (43)--(45), `eq:global-box-notation`--`eq:global-accepted-box-conclusion` | The five conditions in (44) and the conclusion in (45) | `src/qn_km_enclosure.m`, `src/qn_interval_ldl_pd.m`, `src/qn_certify_box.m`, `src/qn_global_code_test.m`, `src/qn_veigs_indices.m` | `tests/qn_smoke_test.m`; current global recomputation required |
+| Equations (46)--(47), `eq:global-discard-test`, `eq:global-bisection` | Discard and bisection rules | `src/qn_box_inside_ball.m`, `src/qn_box_outside_pk.m`, `src/qn_bisect_box.m` | `tests/qn_smoke_test.m`; current global recomputation required |
+| Equation (48), `eq:global-completion-test` | \(\mathcal U=\varnothing\) and \(\Delta_*>0\) | `src/qn_global_certified_cover.m`, `src/qn_merge_global_results.m` | `tests/qn_smoke_test.m`; saved global summary uses the earlier schema |
+| Equation (49), `eq:global-final-cover`; Theorem 6.2, `t:box-cover-terminates` | Finite cover of \(\Omega_{\mathrm{II}}\) | `src/qn_global_certified_cover.m` | current recomputation required; saved JSON files are aggregate summaries |
+
+The current `qn_certify_box.m` tests all five conditions displayed in (44).
+In particular, `qn_km_enclosure.m` checks
+\(\underline q_{\mathcal B}>0\) before forming \([M]_{\mathcal B}\), and
+`qn_global_code_test.m` separately checks
+\(\underline\lambda_{\mathcal B}>0\) before testing
+\(\Delta_{\mathcal B}>0\).
+
+## Citation and Provenance
+
+Use `CITATION.cff` to cite this repository and the accompanying paper. Exact
+software versions, source commits, worker counts, hosts, and output hashes are
+recorded in `PROVENANCE.md` and in the `RUN_PROVENANCE.txt` files under
+`results/local/` and `results/global/`.

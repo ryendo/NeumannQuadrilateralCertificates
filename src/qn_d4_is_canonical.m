@@ -1,12 +1,8 @@
 function tf = qn_d4_is_canonical(center)
-% Source-code convention for one representative of each D4 orbit.
+% True for one distinct representative of the D_4 action preceding (13).
 
 c=center(:);
-a=c(1); b=c(2); cc=c(3); d=c(4);
-images=[a, a,  a,  a, -a, -a, -a, -a; ...
-        b, b, -b, -b, -cc,-cc, cc, cc; ...
-        cc,-cc,cc,-cc, -b,  b, -b,  b; ...
-        d,-d, -d,  d,   d, -d, -d,  d];
+images=qn_d4_images(c);
 keys=round(images.'*1e12);
 best=keys(1,:);
 for k=2:size(keys,1)

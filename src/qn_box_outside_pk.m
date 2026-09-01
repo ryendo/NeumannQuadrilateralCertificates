@@ -1,5 +1,5 @@
 function tf = qn_box_outside_pk(center,half_widths)
-% Conservative certified discard predicate for P_K.
+% Last two discard conditions in (46): the box does not meet P_K.
 
 C=qn_global_constants(); p=qn_interval_box(center,half_widths);
 a=p(1); b=p(2); c=p(3); d=p(4); one=intval('1'); two=intval('2');

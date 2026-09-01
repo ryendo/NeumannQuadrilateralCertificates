@@ -1,5 +1,5 @@
 function [FR,K0,M0]=dq2_fixed_reference()
-% Exact square pencil and symmetry-adapted bases used by all DQ2 checks.
+% Exact square pencil and symmetry-adapted bases used by Algorithm 1.
 PI2=sqr(intval('pi'));
 SQ2=sqrt(intval(2));
 V5=intval(zeros(5,2)); V5(1,1)=SQ2; V5(2,2)=SQ2;

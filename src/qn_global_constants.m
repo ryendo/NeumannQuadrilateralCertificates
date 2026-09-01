@@ -9,9 +9,8 @@ C.pi2 = PI^2;
 % Explicit decimal upper bound for the first positive zero of J_0.
 C.j01_upper = intval('2.404825557695774');
 C.T = intval('4') * C.j01_upper^2 / C.pi2;
-C.lambda_min_H2 = intval('3232') / (intval('27') * PI^6);
-C.rho_local = C.lambda_min_H2;
-C.rho_seam = C.lambda_min_H2 / intval('2');
+C.rho_sharp = intval('3232') / (intval('27') * PI^6);
+C.rho_sharp_over_2 = C.rho_sharp / intval('2');
 C.ulp_pad = intval('1e-12');
 C.max_depth = 60;
 
