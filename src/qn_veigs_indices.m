@@ -59,6 +59,8 @@ for j=1:numel(requested)
     certified=union(certified,indices);
 end
 
+assert(isappdata(0,'qn_veigs_commit'), ...
+    'qn_setup must verify the veigs checkout before eigenvalue certification.');
 info=struct('requested_indices',requested,'indices',certified,'commit', ...
-    '6556d39a0d9819bb172d232062b698aa76e420f6');
+    getappdata(0,'qn_veigs_commit'));
 end

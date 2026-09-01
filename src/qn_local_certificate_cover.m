@@ -19,11 +19,14 @@ function qn_local_certificate_cover(worker_id, worker_count, face_subdivisions, 
 
 if nargin < 4, outdir = 'results'; end
 if ~exist(outdir, 'dir'), mkdir(outdir); end
+provenance=qn_runtime_provenance();
 PI = intval('pi');
 rho = 3232/(27*PI^6);                         % rho# in Sec. 1
 tmax = intval(sup(rho))*intval('1.000000000001');
 radial_grid = tmax * (intval([0 2 4 6 8 10 12 14 15 16])/intval(16)); % T intervals, refined near ρ#
-fid = fopen(sprintf('%s/res_%03d.csv', outdir, worker_id), 'w');
+result_path=sprintf('%s/res_%03d.csv',outdir,worker_id);
+done_path=sprintf('%s/done_%03d.txt',outdir,worker_id);
+fid = fopen(result_path, 'w');
 fprintf(fid, ['box_id,ok,inf_S,max_subdivision_depth,elapsed_seconds,' ...
     'lambda1_lower,lambda2_upper,mass_matrix_lower,lambda3_lower,' ...
     'lambda3_minus_3pi2_over2_lower\n']);
@@ -50,12 +53,27 @@ for box_id = worker_id:worker_count:total_boxes
     end
 end
 fclose(fid);
-fid2 = fopen(sprintf('%s/done_%03d.txt', outdir, worker_id), 'w');
+fid2 = fopen(done_path, 'w');
 fprintf(fid2, ['worstS=%.17e worstMass=%.17e worstLambda3=%.17e ' ...
     'worstLambda3Gap=%.17e nfail=%d time=%.17e\n'],worst_lower_S, ...
     worst_mass_lower,worst_lambda3_lower,worst_lambda3_gap_lower, ...
     failed_boxes,toc(tstart));
 fclose(fid2);
+metadata=provenance;
+metadata.schema_version=1;
+metadata.worker_id=worker_id;
+metadata.worker_count=worker_count;
+metadata.face_subdivisions=face_subdivisions;
+metadata.expected_top_level_boxes=total_boxes;
+metadata.result_sha256=qn_sha256_file(result_path);
+metadata.done_sha256=qn_sha256_file(done_path);
+metadata_path=sprintf('%s/meta_%03d.json',outdir,worker_id);
+temporary_metadata=[metadata_path '.tmp'];
+fid3=fopen(temporary_metadata,'w'); assert(fid3>=0,'Cannot write local metadata.');
+cleanup=onCleanup(@() fclose(fid3));
+fprintf(fid3,'%s\n',jsonencode(metadata,'PrettyPrint',true));
+clear cleanup
+movefile(temporary_metadata,metadata_path,'f');
 end
 
 function proof = certify_with_subdivision(face_box,depth,radial_grid,t_levels)

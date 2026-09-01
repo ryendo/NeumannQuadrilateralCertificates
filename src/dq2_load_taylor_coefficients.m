@@ -14,7 +14,12 @@ function TC = dq2_load_taylor_coefficients()
 persistent CACHE
 if ~isempty(CACHE), TC = CACHE; return; end
 repo_root = fileparts(fileparts(mfilename('fullpath')));
-S = load(fullfile(repo_root, 'data', 'taylor_coefficients.mat'));
+table_path=fullfile(repo_root, 'data', 'taylor_coefficients.mat');
+expected_sha256='c753842c1a98e6b7b9c811968755b89bcc043f48645798487cfb2a48b14bb50e';
+actual_sha256=qn_sha256_file(table_path);
+assert(strcmp(actual_sha256,expected_sha256), ...
+    'Taylor coefficient table SHA-256 mismatch.');
+S = load(table_path);
 PI = intval('pi');
 M = size(S.MEXP, 1);
 TC.MEXP = S.MEXP;
