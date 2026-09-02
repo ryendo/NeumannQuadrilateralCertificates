@@ -1,0 +1,18 @@
+{
+  "source_commit": "671ddd9f6fb34dbb74b4474a3bdf71d11c53b766",
+  "source_dirty": false,
+  "source_code_sha256": "a063015a056a186841d0d040f649c9e24b4baa9012e601ddf31c40aeadb75d12",
+  "veigs_commit": "6556d39a0d9819bb172d232062b698aa76e420f6",
+  "run_id": "20260901T144014Z-local-671ddd9",
+  "matlab_version": "23.2.0.2459199 (R2023b) Update 5",
+  "matlab_release": "2023b",
+  "intlab_start_sha256": "fd313a5a13bca7153627f9c1f875ecc27a75efb36a48b06edf4343103067d4b5",
+  "intlab_tree_sha256": "5f5ab318797270747ff92a3e3ef10f1f021a3a99603ccf2d926e08341a0a132a",
+  "schema_version": 1,
+  "worker_id": 25,
+  "worker_count": 32,
+  "face_subdivisions": 12,
+  "expected_top_level_boxes": 13824,
+  "result_sha256": "b591a8893b0b14a64116c6f6343c69de6862c626f946bb89638da0846bd5c9fd",
+  "done_sha256": "ebacd031a9133592c346d15aead5b98c32a3f96489991a5f3f523196f66e8abb"
+}

@@ -14,51 +14,64 @@ the verified small-pencil `veig` routine from the same pinned package. The
 local calculation targets indices 1 and 3 and requires
 `inf(lambda_3) > 16`; the global calculation targets index 1.
 
-## Checked-in computations (2026-08-26--27)
+## Checked-in computations (2026-09-01--02)
 
-The checked-in results were computed on `liulab-hpc2023` from source commit
-`b9944f600ba63bed3ddbbde9890febebb613b3ac`.
+The checked-in results were recomputed on `liulab-hpc2023` from the clean
+source commit `671ddd9f6fb34dbb74b4474a3bdf71d11c53b766`.
+The executable-tree digest for `src/`, `scripts/`, `tests/`, and `data/` is
+`a063015a056a186841d0d040f649c9e24b4baa9012e601ddf31c40aeadb75d12`.
 
-They are checked-in outputs, not outputs regenerated from the current
-working tree. The current local code uses the literal formulas (34) and (39).
-The current global code tests all five conditions in (44) and records the
-aggregate lower bounds for `q`, `lambda_1`, and `Delta`. A new local and global
-run is therefore required to attach current-source provenance to new numerical
-summaries. In particular, the old global JSON schema does not record the lower
-bound for `lambda_1` on every accepted box.
+| computation | PBS job | workers | completion | certified minimum |
+|---|---|---:|---|---:|
+| local | `295.liulab-hpc2023` | 32 | 13,824/13,824 top-level boxes, 0 failures | `S >= 0.010109281357063793` |
+| global | `294.liulab-hpc2023` | 16 | 16/16 initial representatives, 0 unresolved boxes | `Delta >= 2.6545819956425021e-5` |
 
-| computation | workers | recorded completion | recorded minimum |
-|---|---:|---|---:|
-| local | 60 | 13,824/13,824 top-level boxes, 0 failures | `S >= 0.0044848550155087707` |
-| global | 18 | 16/16 retained initial boxes, 0 unverified boxes | margin `>= 8.0698658297961856e-6` |
+The local run additionally records
+`lambda_1 >= 7.6300046469977758`,
+`lambda_2 <= 13.267374191855003`,
+`lambda_min(M) >= 0.052100929203335616`, and
+`lambda_3 >= 17.834653422811055`. Its 32 metadata files record the common
+source/dependency provenance and the SHA-256 digests of the corresponding CSV
+and completion marker. The summarizer checks the exact box IDs `1:13824`, no
+duplicates, all 32 completion markers, every bound, and every artifact binding
+before reporting `verified=true`.
 
-The local audit found exactly the box IDs `1:13824`, without duplicates,
-all 60 completion markers, and the recorded ten-column schema. It independently
-recomputed the saved extrema, including
-`lambda_min(M) >= 0.052100929203335616` and
-`lambda_3 >= 17.834653422811055`.
+The global run accepted 114,627 boxes, discarded 15,623, performed 130,234
+bisections, reached depth 30, and left no unresolved box. It records
+`q >= 0.8273243052571837` and
+`lambda_1 >= 3.4247176582671237` on accepted boxes. The merger verifies the
+exact 16 initial-box IDs, the binary-tree accounting identity, the required
+radius, all five conditions represented in the current schema, and common
+source/dependency provenance before reporting `complete=true`. The worker JSON
+files are aggregate completion records, not a saved list of every leaf; the
+full leaf subdivision is reconstructed by rerunning the source.
 
-The global audit found worker IDs `1:18`, recomputed every sum and extremum in
-`summary.json`, and checked the recorded `complete=true` and `unverified=0`
-fields for every worker. Each of the 16 retained initial boxes was processed
-directly by `qn_global_certified_cover`; workers 17 and 18 have no assigned
-box. This audit checks the aggregate files only. The old bisection used
-floating-point child descriptors that can leave a rounding-size gap, and the
-leaf boxes were not saved, so the recorded global run is not independently
-auditable as the finite cover in (49). It must be recomputed with the current
-outward-covering bisection.
-
-The per-certificate `RUN_PROVENANCE.txt` files record the exact environment,
-and the `SHA256SUMS` manifests cover all saved outputs.
+Both jobs used MATLAB R2023b Update 5. Their recorded INTLAB startup digest is
+`fd313a5a13bca7153627f9c1f875ecc27a75efb36a48b06edf4343103067d4b5`,
+and the INTLAB tree digest (excluding INTLAB's generated startup cache) is
+`5f5ab318797270747ff92a3e3ef10f1f021a3a99603ccf2d926e08341a0a132a`.
+The per-certificate `RUN_PROVENANCE.txt` files record the PBS job, run ID,
+software environment, start/end times, and clean source state. The
+`SHA256SUMS` manifests cover all checked-in result, metadata, completion, and
+provenance files; diagnostic worker logs were retrieved separately and are not
+part of the repository certificate artifacts.
 
 ## Mathematical source alignment
 
 The local Taylor coefficients originated in
 `ryendo/dq2-quadrilateral-certificate` commit
-`6d44991af03102a2338e7af69c67767a32e55178`. The implementation in the current
-working tree keeps Taylor-remainder accumulation and Gershgorin radii in
-interval arithmetic and uses the exact two-root identity described in the
-appendix. These source changes postdate the saved run identified above.
+`6d44991af03102a2338e7af69c67767a32e55178`. At runtime,
+`dq2_load_taylor_coefficients` requires the table digest
+`c753842c1a98e6b7b9c811968755b89bcc043f48645798487cfb2a48b14bb50e`.
+This authenticates the exact table used by the computation, but the supplied
+workflow does not regenerate or independently check every coefficient from the
+integral kernels. Correctness of that symbolic preprocessing artifact is
+therefore an explicit trusted input. A fully self-contained certificate would
+also publish an exact-arithmetic generator or entrywise checker.
+
+The current implementation keeps Taylor-remainder accumulation and
+Gershgorin radii in interval arithmetic and uses the exact two-root identity
+described in the appendix.
 
 The global implementation is a mathematical port of the supplied
 `quad_neumann_global` code. For the fixed ambient trigonometric trial space,
