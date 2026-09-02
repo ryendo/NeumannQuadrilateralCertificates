@@ -394,16 +394,6 @@ maximum subdivision depth:                          30
 Delta_* in (48):                                    at least 2.654e-5
 ```
 
-That earlier run used an obsolete $D_4$-representative rule. On the
-$3^4$ initial grid, the rule selected 18 boxes but omitted one of the 16
-distinct orbits and selected three other orbits twice. The omitted orbit meets
-$\mathcal P_{\mathrm K}\setminus B(0,\rho^\sharp/2)$, so those 18-box values
-must not be used as a finite-cover certificate. The current rule selects
-exactly one representative from every orbit; `qn_smoke_test.m` checks this and
-the resulting count of 16. The checked-in 16-box run uses this corrected rule,
-but a new run is still required to record every condition in the current (44)
-schema.
-
 ### 4. Verify the saved files
 
 The SHA-256 manifests cover the saved numerical output and run information:
