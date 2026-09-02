@@ -2,10 +2,10 @@ cff-version: 1.2.0
 message: "If you use this software, cite the accompanying paper."
 title: "Supplementary code for Maximizing Laplace--Neumann eigenvalues on quadrilaterals"
 authors:
-  - family-names: "Osting"
-    given-names: "Braxton"
   - family-names: "Endo"
     given-names: "Ryoki"
+  - family-names: "Osting"
+    given-names: "Braxton"
 version: 0.1.0
 date-released: 2026-07-15
 url: "https://github.com/ryendo/NeumannQuadrilateralCertificates"
@@ -19,9 +19,9 @@ keywords:
 preferred-citation:
   type: article
   authors:
-    - family-names: "Osting"
-      given-names: "Braxton"
     - family-names: "Endo"
       given-names: "Ryoki"
-  title: "Maximizing Laplace--Neumann eigenvalues on quadrilaterals"
+    - family-names: "Osting"
+      given-names: "Braxton"
+  title: "Maximizing the fundamental Laplace--Neumann eigenvalue on quadrilaterals"
   year: 2026
