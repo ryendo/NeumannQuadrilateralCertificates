@@ -16,15 +16,15 @@ local calculation targets indices 1 and 3 and requires
 
 ## Checked-in computations (2026-09-01--02)
 
-The checked-in results were recomputed on `liulab-hpc2023` from the clean
-source commit `671ddd9f6fb34dbb74b4474a3bdf71d11c53b766`.
+The checked-in results were recomputed from the clean source commit
+`671ddd9f6fb34dbb74b4474a3bdf71d11c53b766`.
 The executable-tree digest for `src/`, `scripts/`, `tests/`, and `data/` is
 `a063015a056a186841d0d040f649c9e24b4baa9012e601ddf31c40aeadb75d12`.
 
-| computation | PBS job | workers | completion | certified minimum |
-|---|---|---:|---|---:|
-| local | `295.liulab-hpc2023` | 32 | 13,824/13,824 top-level boxes, 0 failures | `S >= 0.010109281357063793` |
-| global | `294.liulab-hpc2023` | 16 | 16/16 initial representatives, 0 unresolved boxes | `Delta >= 2.6545819956425021e-5` |
+| computation | workers | completion | certified minimum |
+|---|---:|---|---:|
+| local | 32 | 13,824/13,824 top-level boxes, 0 failures | `S >= 0.010109281357063793` |
+| global | 16 | 16/16 initial representatives, 0 unresolved boxes | `Delta >= 2.6545819956425021e-5` |
 
 The local run additionally records
 `lambda_1 >= 7.6300046469977758`,
@@ -50,11 +50,18 @@ Both jobs used MATLAB R2023b Update 5. Their recorded INTLAB startup digest is
 `fd313a5a13bca7153627f9c1f875ecc27a75efb36a48b06edf4343103067d4b5`,
 and the INTLAB tree digest (excluding INTLAB's generated startup cache) is
 `5f5ab318797270747ff92a3e3ef10f1f021a3a99603ccf2d926e08341a0a132a`.
-The per-certificate `RUN_PROVENANCE.txt` files record the PBS job, run ID,
-software environment, start/end times, and clean source state. The
+The per-certificate `RUN_PROVENANCE.txt` files record the run ID, software
+environment, start/end times, and clean source state. The
 `SHA256SUMS` manifests cover all checked-in result, metadata, completion, and
 provenance files; diagnostic worker logs were retrieved separately and are not
 part of the repository certificate artifacts.
+
+Verification authenticates each saved calculation against the clean source
+commit and executable-tree digest recorded by that calculation. A later
+checkout may contain verifier, test, documentation, or source changes; the
+separate `current_source_matches_recorded` diagnostic reports whether its
+executable-tree digest is identical, but that equality is not required for the
+mathematical completion of the recorded calculation.
 
 ## Mathematical source alignment
 

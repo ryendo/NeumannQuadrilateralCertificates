@@ -348,7 +348,7 @@ result = qn_merge_global_results( ...
     fullfile(repo_root, 'results', 'global'), 16, ...
     fullfile(tempdir, 'qn_global_summary.json'));
 assert(result.complete)
-assert(result.current_provenance_valid)
+assert(result.recorded_provenance_valid)
 assert(result.current_initial_assignment_valid)
 ```
 
@@ -369,11 +369,14 @@ Delta_* in (48):                                      2.6545819956425021e-5
 The current schema records every condition in (44), the exact 16 initial-box
 IDs, the binary-tree accounting identity, and source/dependency provenance.
 The merger rejects a wrong radius, invalid counts, missing or duplicate
-initial IDs, stale source code, or an unresolved leaf. The worker JSON files
-are completion summaries rather than a list of every final leaf; rerunning the
-source reconstructs the complete subdivision. Any 18-initial-box statistics
-in an earlier manuscript draft are obsolete: that rule omitted one orbit and
-duplicated three others.
+initial IDs, a digest that does not match the recorded source commit, or an
+unresolved leaf. `current_source_matches_recorded` separately reports whether
+the current checkout has the same executable-tree digest; this is diagnostic
+and is not required to validate a calculation tied to its recorded commit.
+The worker JSON files are completion summaries rather than a list of every
+final leaf; rerunning the recorded source reconstructs the complete
+subdivision. Any 18-initial-box statistics in an earlier manuscript draft are
+obsolete: that rule omitted one orbit and duplicated three others.
 
 ### 4. Verify the saved files
 

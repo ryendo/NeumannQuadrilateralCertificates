@@ -90,8 +90,6 @@ qn_prepare_run() {
     fi
     echo "workers=${workers}"
     echo "matlab=$(command -v matlab)"
-    echo "host=$(hostname)"
-    echo "pbs_job_id=${PBS_JOBID:-none}"
     echo "started_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   } > "${QN_OUTPUT_PATH}/RUN_PROVENANCE.txt"
 }

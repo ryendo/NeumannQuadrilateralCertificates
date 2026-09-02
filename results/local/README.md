@@ -1,8 +1,7 @@
 # Current local completion record
 
 This directory records the 32-worker local run from clean source commit
-`671ddd9f6fb34dbb74b4474a3bdf71d11c53b766` (PBS job
-`295.liulab-hpc2023`). `summary.json` reports
+`671ddd9f6fb34dbb74b4474a3bdf71d11c53b766`. `summary.json` reports
 
 ```text
 top-level direction boxes       = 13824 / 13824

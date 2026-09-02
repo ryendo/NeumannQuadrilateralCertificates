@@ -1,8 +1,7 @@
 # Current global completion record
 
 This directory records the 16-worker global run from clean source commit
-`671ddd9f6fb34dbb74b4474a3bdf71d11c53b766` (PBS job
-`294.liulab-hpc2023`). `summary.json` reports
+`671ddd9f6fb34dbb74b4474a3bdf71d11c53b766`. `summary.json` reports
 
 ```text
 initial retained boxes = 16
