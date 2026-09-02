@@ -366,7 +366,7 @@ inf lambda_1 on accepted boxes:                       3.4247176582671237
 Delta_* in (48):                                      2.6545819956425021e-5
 ```
 
-The current schema records every condition in (44), the exact 16 initial-box
+The schema records every condition in (44), the exact 16 initial-box
 IDs, the binary-tree accounting identity, and source/dependency provenance.
 The merger rejects a wrong radius, invalid counts, missing or duplicate
 initial IDs, a digest that does not match the recorded source commit, or an
