@@ -194,6 +194,11 @@ missingWorkerLocal=qn_summarize_local_results(localVerifierDir,2,1);
 assert(missingWorkerLocal.id_coverage_complete && ...
     ~missingWorkerLocal.done_markers_complete && ~missingWorkerLocal.verified, ...
     'A local cover with a missing expected worker/DONE marker was accepted.');
+write_local_results(localResultPath,1:8,inf);
+nonfiniteLocal=qn_summarize_local_results(localVerifierDir,1,1);
+assert(~nonfiniteLocal.base_values_finite && ...
+    ~nonfiniteLocal.certificate_bounds_verified && ~nonfiniteLocal.verified, ...
+    'A local cover with a non-finite recorded bound was accepted.');
 
 savedMergeOutput=[tempname '.json'];
 savedMergeCleanup=onCleanup(@() delete(savedMergeOutput)); %#ok<NASGU>
@@ -331,14 +336,15 @@ cleanup=onCleanup(@() fclose(fid)); %#ok<NASGU>
 fprintf(fid,'%s\n',jsonencode(value,'PrettyPrint',true));
 end
 
-function write_local_results(path,box_ids)
+function write_local_results(path,box_ids,inf_S)
+if nargin<3, inf_S=1; end
 fid=fopen(path,'w'); assert(fid>=0,'Cannot open temporary local CSV file.');
 cleanup=onCleanup(@() fclose(fid)); %#ok<NASGU>
 fprintf(fid,['box_id,ok,inf_S,max_subdivision_depth,elapsed_seconds,' ...
     'lambda1_lower,lambda2_upper,mass_matrix_lower,lambda3_lower,' ...
     'lambda3_minus_3pi2_over2_lower\n']);
 for box_id=box_ids
-    fprintf(fid,'%d,1,1,0,0,1,2,1,17,1\n',box_id);
+    fprintf(fid,'%d,1,%.17g,0,0,1,2,1,17,1\n',box_id,inf_S);
 end
 end
 

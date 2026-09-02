@@ -23,14 +23,14 @@ The executable-tree digest for `src/`, `scripts/`, `tests/`, and `data/` is
 
 | computation | workers | completion | certified minimum |
 |---|---:|---|---:|
-| local | 32 | 13,824/13,824 top-level boxes, 0 failures | `S >= 0.010109281357063793` |
-| global | 16 | 16/16 initial representatives, 0 unresolved boxes | `Delta >= 2.6545819956425021e-5` |
+| local | 32 | 13,824/13,824 top-level boxes, 0 failures | `S >= 0.010109` |
+| global | 16 | 16/16 initial representatives, 0 unresolved boxes | `Delta >= 2.6545e-5` |
 
 The local run additionally records
-`lambda_1 >= 7.6300046469977758`,
-`lambda_2 <= 13.267374191855003`,
-`lambda_min(M) >= 0.052100929203335616`, and
-`lambda_3 >= 17.834653422811055`. Its 32 metadata files record the common
+`lambda_1 >= 7.630`,
+`lambda_2 <= 13.268`,
+`lambda_min(M) >= 0.0521`, and
+`lambda_3 >= 17.834`. Its 32 metadata files record the common
 source/dependency provenance and the SHA-256 digests of the corresponding CSV
 and completion marker. The summarizer checks the exact box IDs `1:13824`, no
 duplicates, all 32 completion markers, every bound, and every artifact binding
@@ -38,8 +38,8 @@ before reporting `verified=true`.
 
 The global run accepted 114,627 boxes, discarded 15,623, performed 130,234
 bisections, reached depth 30, and left no unresolved box. It records
-`q >= 0.8273243052571837` and
-`lambda_1 >= 3.4247176582671237` on accepted boxes. The merger verifies the
+`q >= 0.8273` and
+`lambda_1 >= 3.4247` on accepted boxes. The merger verifies the
 exact 16 initial-box IDs, the binary-tree accounting identity, the required
 radius, all five conditions represented in the current schema, and common
 source/dependency provenance before reporting `complete=true`. The worker JSON
