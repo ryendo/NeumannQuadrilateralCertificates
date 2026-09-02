@@ -375,8 +375,7 @@ the current checkout has the same executable-tree digest; this is diagnostic
 and is not required to validate a calculation tied to its recorded commit.
 The worker JSON files are completion summaries rather than a list of every
 final leaf; rerunning the recorded source reconstructs the complete
-subdivision. Any 18-initial-box statistics in an earlier manuscript draft are
-obsolete: that rule omitted one orbit and duplicated three others.
+subdivision.
 
 ### 4. Verify the saved files
 
